@@ -75,23 +75,83 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          end_hour: number
           full_name: string | null
           id: string
+          prompts_per_day: number
+          start_hour: number
           updated_at: string
         }
         Insert: {
           created_at?: string
           email?: string | null
+          end_hour?: number
           full_name?: string | null
           id: string
+          prompts_per_day?: number
+          start_hour?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
           email?: string | null
+          end_hour?: number
           full_name?: string | null
           id?: string
+          prompts_per_day?: number
+          start_hour?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      prompt_events: {
+        Row: {
+          answered: boolean
+          fired_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          answered?: boolean
+          fired_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          answered?: boolean
+          fired_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

@@ -8,6 +8,13 @@
       "when": 1788034333789,
       "tag": "0000_clinician_patient_sharing",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788036499568,
+      "tag": "0001_push_notifications",
+      "breakpoints": true
     }
   ]
 }
