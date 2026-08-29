@@ -48,7 +48,6 @@ function AuthPage() {
   // for an existing clinician to approve.
   const afterAuth = async (
     userRole: AppRole,
-    userId?: string,
     user?: { email?: string | null; full_name?: string | null } | null,
   ) => {
     await syncNow().catch(() => undefined);
