@@ -303,3 +303,60 @@ function ProfilePage() {
     </AppShell>
   );
 }
+
+function HourInput({
+  label,
+  min,
+  max,
+  value,
+  onCommit,
+}: {
+  label: string;
+  min: number;
+  max: number;
+  value: number;
+  onCommit: (hour: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(value));
+
+  // Keep the field in sync when the value changes from elsewhere.
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  const commit = (raw: string) => {
+    const parsed = Number(raw);
+    if (raw.trim() === "" || Number.isNaN(parsed)) return; // let the user keep typing
+    const clamped = Math.min(max, Math.max(min, Math.trunc(parsed)));
+    if (clamped !== value) onCommit(clamped);
+  };
+
+  return (
+    <label className="rounded-2xl bg-sand/70 px-4 py-3">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-clay">
+        {label}
+      </span>
+      <input
+        type="number"
+        inputMode="numeric"
+        min={min}
+        max={max}
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          commit(e.target.value);
+        }}
+        onBlur={() => {
+          const parsed = Number(draft);
+          if (draft.trim() === "" || Number.isNaN(parsed)) {
+            setDraft(String(value)); // restore last valid value
+          } else {
+            const clamped = Math.min(max, Math.max(min, Math.trunc(parsed)));
+            setDraft(String(clamped));
+          }
+        }}
+        className="mt-1 w-full bg-transparent font-display text-[24px] leading-none text-brand outline-none"
+      />
+    </label>
+  );
+}
