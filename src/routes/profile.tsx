@@ -1,7 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
+import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@/lib/session";
+import { syncNow } from "@/lib/sync";
 import {
   behaviorById,
   streakDays,
@@ -9,6 +12,7 @@ import {
   useHydrated,
   useSettings,
 } from "@/lib/ema";
+
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -34,6 +38,29 @@ function ProfilePage() {
   const { settings, update } = useSettings();
   const { entries, clearAll } = useEntries();
   const [confirming, setConfirming] = useState(false);
+  const { user, role, loading: sessionLoading } = useSession();
+  const navigate = useNavigate();
+  const [syncState, setSyncState] = useState<string | null>(null);
+
+  const doSync = async () => {
+    setSyncState("Syncing…");
+    try {
+      const result = await syncNow();
+      setSyncState(
+        result.synced
+          ? `Synced · ${result.pushed} uploaded, ${result.pulled} pulled`
+          : "Sign in to sync",
+      );
+    } catch {
+      setSyncState("Sync failed — try again");
+    }
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  };
+
 
   const episodes = entries.filter((e) => behaviorById(e.behavior).episode).length;
 
@@ -76,6 +103,59 @@ function ProfilePage() {
           </div>
         ))}
       </section>
+
+      <section className="mx-5 mt-6 rounded-2xl bg-sand/60 px-4 py-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-clay">Account</p>
+        {sessionLoading ? (
+          <p className="mt-2 text-[13px] text-ink/45">Checking account…</p>
+        ) : user ? (
+          <>
+            <p className="mt-2 text-[14px] font-semibold">{user.email}</p>
+            <p className="mt-1 text-[12px] leading-snug text-ink/55">
+              {role === "physician"
+                ? "Clinician account — you can review assigned patients' records."
+                : "Patient account — your check-ins back up to the cloud so your clinician can review them."}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                onClick={doSync}
+                className="h-10 rounded-xl bg-brand px-4 text-[13px] font-semibold text-cream"
+              >
+                Sync now
+              </button>
+              {role === "physician" && (
+                <Link
+                  to="/clinic"
+                  className="flex h-10 items-center rounded-xl border border-clay/40 px-4 text-[13px] font-semibold text-brand"
+                >
+                  Open clinic
+                </Link>
+              )}
+              <button
+                onClick={signOut}
+                className="h-10 rounded-xl border border-clay/40 px-4 text-[13px] font-semibold text-clay"
+              >
+                Sign out
+              </button>
+            </div>
+            {syncState && <p className="mt-2 text-[12px] text-ink/50">{syncState}</p>}
+          </>
+        ) : (
+          <>
+            <p className="mt-2 text-[13px] leading-snug text-ink/55">
+              Working offline on this device. Create an account to back up your check-ins and let
+              your clinician follow your progress.
+            </p>
+            <Link
+              to="/auth"
+              className="mt-3 flex h-11 items-center justify-center rounded-xl bg-brand text-[14px] font-semibold text-cream"
+            >
+              Sign in or create account
+            </Link>
+          </>
+        )}
+      </section>
+
 
       <section className="mx-5 mt-6">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-clay">Your name</p>
@@ -162,7 +242,7 @@ function ProfilePage() {
       </section>
 
       <p className="mx-5 mt-6 text-[12px] leading-snug text-ink/45">
-        Unclench stores every report on this device only. It supports self-monitoring of awake
+        Reports are stored on this device and, when you're signed in, backed up to your account so an assigned clinician can review them. Unclench supports self-monitoring of awake
         bruxism and is not a diagnosis — share your export with your dentist or specialist.
       </p>
     </AppShell>

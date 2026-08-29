@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { greeting, useSettings } from "@/lib/ema";
+import { useSession } from "@/lib/session";
 
 const TABS = [
   { to: "/", label: "Now" },
@@ -9,6 +10,9 @@ const TABS = [
   { to: "/cues", label: "Cues" },
   { to: "/profile", label: "Profile" },
 ] as const;
+
+const CLINIC_TAB = { to: "/clinic", label: "Clinic" } as const;
+
 
 export function AppShell({
   title,
@@ -20,6 +24,9 @@ export function AppShell({
   children: ReactNode;
 }) {
   const { settings } = useSettings();
+  const { role } = useSession();
+  const tabs = role === "physician" ? [...TABS, CLINIC_TAB] : [...TABS];
+
   const g = greeting();
   const day = new Date().toLocaleDateString([], { weekday: "short", day: "numeric" });
   const name = settings.name.trim();
@@ -49,7 +56,7 @@ export function AppShell({
 
       <nav className="fixed bottom-0 left-1/2 w-full max-w-[430px] -translate-x-1/2 border-t border-clay/15 bg-cream/95 px-5 pt-3 pb-4 backdrop-blur">
         <div className="flex items-center justify-between">
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <Link
               key={tab.to}
               to={tab.to}

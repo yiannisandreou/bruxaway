@@ -162,6 +162,7 @@ export function useEntries() {
     const all = [...readList<Entry>(ENTRIES_KEY), next];
     window.localStorage.setItem(ENTRIES_KEY, JSON.stringify(all));
     broadcast();
+    void import("@/lib/sync").then((m) => m.pushEntries([next]));
     return next;
   }, []);
 
@@ -169,7 +170,9 @@ export function useEntries() {
     const all = readList<Entry>(ENTRIES_KEY).filter((e) => e.id !== id);
     window.localStorage.setItem(ENTRIES_KEY, JSON.stringify(all));
     broadcast();
+    void import("@/lib/sync").then((m) => m.deleteEntry(id));
   }, []);
+
 
   const clearAll = useCallback(() => {
     window.localStorage.removeItem(ENTRIES_KEY);
@@ -301,4 +304,22 @@ export function peakWindow(entries: Entry[]) {
     return `${hr}${suffix}`;
   };
   return { from: best, to: best + 3, label: `${label(best)}–${label(best + 3)}`, count: bestVal };
+}
+
+/* ── local store access (used by cloud sync) ───────────────────────────── */
+
+export function allLocalEntries(): Entry[] {
+  return readList<Entry>(ENTRIES_KEY);
+}
+
+/** Adds entries that aren't already stored locally, keyed by id. */
+export function mergeLocalEntries(incoming: Entry[]) {
+  if (typeof window === "undefined" || !incoming.length) return 0;
+  const existing = readList<Entry>(ENTRIES_KEY);
+  const seen = new Set(existing.map((e) => e.id));
+  const fresh = incoming.filter((e) => !seen.has(e.id));
+  if (!fresh.length) return 0;
+  window.localStorage.setItem(ENTRIES_KEY, JSON.stringify([...existing, ...fresh]));
+  broadcast();
+  return fresh.length;
 }
