@@ -62,6 +62,7 @@ function NowPage() {
   const peak = useMemo(() => peakWindow(entries), [entries]);
   const streak = useMemo(() => streakDays(entries, now), [entries, now]);
   const maxDay = Math.max(1, ...week.map((d) => d.reports));
+  const answered = today.filter((e) => e.prompted).length;
 
   return (
     <AppShell>
