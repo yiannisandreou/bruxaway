@@ -135,7 +135,10 @@ function AuthPage() {
     const { data } = await supabase.auth.getUser();
     if (data.user) {
       const claimed = await ensureAccount(data.user, role);
-      await afterAuth(claimed);
+      await afterAuth(claimed, data.user.id, {
+        email: data.user.email ?? null,
+        full_name: (data.user.user_metadata?.full_name as string | undefined) ?? null,
+      });
     }
   };
 
