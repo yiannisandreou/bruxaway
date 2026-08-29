@@ -1,7 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
+import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@/lib/session";
+import { syncNow } from "@/lib/sync";
 import {
   behaviorById,
   streakDays,
@@ -9,6 +12,7 @@ import {
   useHydrated,
   useSettings,
 } from "@/lib/ema";
+
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
