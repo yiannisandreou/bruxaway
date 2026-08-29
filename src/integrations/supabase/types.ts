@@ -184,6 +184,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      eligible_prompt_users: {
+        Args: never
+        Returns: {
+          auth_key: string
+          end_hour: number
+          endpoint: string
+          fired_today: number
+          local_hour: number
+          p256dh: string
+          prompts_per_day: number
+          start_hour: number
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
