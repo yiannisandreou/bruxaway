@@ -17,9 +17,9 @@ export function AccountSync() {
     if (loading || !user || done.current === user.id) return;
     done.current = user.id;
     void (async () => {
-      const pending = window.localStorage.getItem(PENDING_ROLE_KEY) as AppRole | null;
-      const metaRole = (user.user_metadata as { role?: AppRole } | null)?.role;
-      await ensureAccount(user, pending ?? metaRole ?? "patient").catch(() => undefined);
+      // Self-service sign-up can only ever claim the patient role; clinician
+      // accounts are provisioned server-side after verification.
+      await ensureAccount(user, "patient").catch(() => undefined);
       window.localStorage.removeItem(PENDING_ROLE_KEY);
       await syncNow().catch(() => undefined);
     })();

@@ -30,7 +30,9 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [role, setRole] = useState<AppRole>("patient");
+  // Sign-up can only claim the patient role. Clinician accounts are granted
+  // by a verified, server-side process — never self-selected.
+  const role: AppRole = "patient";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
