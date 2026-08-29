@@ -142,3 +142,66 @@
     color: var(--color-foreground);
   }
 }
+
+/* ── Unclench design system: warm terracotta EMA palette ───────────────── */
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-amber: var(--amber);
+  --color-sand: var(--sand);
+  --color-cream: var(--cream);
+  --color-ink: var(--ink);
+  --color-clay: var(--clay);
+  --color-moss: var(--moss);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --shadow-brand: var(--shadow-brand);
+  --shadow-brand-sm: var(--shadow-brand-sm);
+}
+
+:root {
+  --brand: oklch(0.5609 0.1344 41.7);
+  --brand-foreground: oklch(0.9748 0.0119 79.79);
+  --amber: oklch(0.7551 0.1162 68.12);
+  --sand: oklch(0.9382 0.0255 78.92);
+  --cream: oklch(0.9748 0.0119 79.79);
+  --ink: oklch(0.3015 0.0326 56.34);
+  --clay: oklch(0.6869 0.0973 55.27);
+  --moss: oklch(0.6115 0.0587 124.15);
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+
+  --shadow-brand: 0 18px 40px -18px oklch(0.5609 0.1344 41.7 / 0.85);
+  --shadow-brand-sm: 0 14px 28px -14px oklch(0.5609 0.1344 41.7 / 0.9);
+
+  /* semantic mapping */
+  --background: var(--cream);
+  --foreground: var(--ink);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--ink);
+  --popover: var(--cream);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
+  --secondary: var(--sand);
+  --secondary-foreground: var(--ink);
+  --muted: var(--sand);
+  --muted-foreground: oklch(0.5 0.035 60);
+  --accent: var(--amber);
+  --accent-foreground: var(--ink);
+  --border: oklch(0.6869 0.0973 55.27 / 0.3);
+  --input: oklch(0.6869 0.0973 55.27 / 0.4);
+  --ring: var(--brand);
+  --radius: 1rem;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, .font-display {
+    font-family: var(--font-display);
+  }
+}
