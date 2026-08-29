@@ -91,9 +91,34 @@ function ClinicPage() {
     setFetching(false);
   }, []);
 
+  const loadRequests = useCallback(async () => {
+    const { data } = await supabase
+      .from("role_requests")
+      .select("id, email, full_name, created_at")
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+    setRequests((data ?? []) as ClinicianRequest[]);
+  }, []);
+
   useEffect(() => {
-    if (!loading && user) void load();
-  }, [loading, user, load]);
+    if (!loading && user) {
+      void load();
+      void loadRequests();
+    }
+  }, [loading, user, load, loadRequests]);
+
+  const decide = async (requestId: string, approve: boolean) => {
+    setReqBusy(requestId);
+    setReqError(null);
+    const fn = approve ? approveClinician : rejectClinician;
+    const result = await fn({ data: { requestId } });
+    setReqBusy(null);
+    if (!result.ok) {
+      setReqError(result.error);
+      return;
+    }
+    await loadRequests();
+  };
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
