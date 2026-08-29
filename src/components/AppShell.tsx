@@ -24,6 +24,9 @@ export function AppShell({
   children: ReactNode;
 }) {
   const { settings } = useSettings();
+  const { role } = useSession();
+  const tabs = role === "physician" ? [...TABS, CLINIC_TAB] : [...TABS];
+
   const g = greeting();
   const day = new Date().toLocaleDateString([], { weekday: "short", day: "numeric" });
   const name = settings.name.trim();
