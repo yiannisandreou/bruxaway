@@ -184,6 +184,48 @@ function ClinicPage() {
       </form>
       {error && <p className="mt-2 text-[13px] text-brand">{error}</p>}
 
+      {requests.length > 0 && (
+        <section className="mt-6 space-y-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink/45">
+            Clinician access requests
+          </p>
+          {reqError && <p className="text-[13px] text-brand">{reqError}</p>}
+          {requests.map((r) => (
+            <div key={r.id} className="rounded-2xl bg-sand/60 px-4 py-4">
+              <div className="flex items-baseline justify-between">
+                <p className="font-display text-[16px] leading-none">
+                  {r.full_name || r.email || "Unknown"}
+                </p>
+                <span className="text-[11px] text-clay">
+                  {new Date(r.created_at).toLocaleDateString()}
+                </span>
+              </div>
+              {r.email && r.email !== r.full_name && (
+                <p className="mt-1 text-[12px] text-ink/50">{r.email}</p>
+              )}
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  disabled={reqBusy === r.id}
+                  onClick={() => decide(r.id, true)}
+                  className="h-9 flex-1 rounded-xl bg-brand text-[13px] font-semibold text-cream disabled:opacity-60"
+                >
+                  {reqBusy === r.id ? "…" : "Approve"}
+                </button>
+                <button
+                  type="button"
+                  disabled={reqBusy === r.id}
+                  onClick={() => decide(r.id, false)}
+                  className="h-9 flex-1 rounded-xl border border-clay/30 text-[13px] font-semibold text-clay disabled:opacity-60"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
       <section className="mt-6 space-y-3">
         {fetching && <p className="text-[13px] text-ink/45">Loading caseload…</p>}
         {!fetching && !patients.length && (
