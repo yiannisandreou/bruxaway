@@ -23,6 +23,7 @@ export function AccountSync() {
       // accounts are provisioned server-side after verification.
       await ensureAccount(user, "patient").catch(() => undefined);
       window.localStorage.removeItem(PENDING_ROLE_KEY);
+      await migrateDeviceSubscriptionToAccount().catch(() => undefined);
       await syncNow().catch(() => undefined);
     })();
   }, [loading, user]);
