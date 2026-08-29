@@ -253,7 +253,7 @@ function ProfilePage() {
       </section>
 
       <section className="mx-5 mt-6 grid grid-cols-2 gap-3">
-        <HourInput
+        <HourWheel
           label="Wake hour"
           min={0}
           max={23}
@@ -263,7 +263,7 @@ function ProfilePage() {
             void syncSettingsToCloud();
           }}
         />
-        <HourInput
+        <HourWheel
           label="Sleep hour"
           min={1}
           max={24}
