@@ -57,6 +57,13 @@
       "when": 1788040430192,
       "tag": "0007_restore_care_link_patient_check",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788040785227,
+      "tag": "0008_restrict_self_assign_patient_only",
+      "breakpoints": true
     }
   ]
 }
