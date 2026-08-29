@@ -80,12 +80,12 @@ function CuesPage() {
         </p>
         <p className="mt-2 font-display text-[26px] leading-tight">
           {running || elapsed > 0
-            ? RESET_STEPS[activeIndex === -1 ? RESET_STEPS.length - 1 : activeIndex].label
+            ? RESET_STEPS[activeIndex === -1 ? RESET_STEPS.length - 1 : activeIndex]!.label
             : "Teeth apart, lips together"}
         </p>
         <p className="mt-2 min-h-10 text-[13px] text-cream/75">
           {running || elapsed > 0
-            ? RESET_STEPS[activeIndex === -1 ? RESET_STEPS.length - 1 : activeIndex].detail
+            ? RESET_STEPS[activeIndex === -1 ? RESET_STEPS.length - 1 : activeIndex]!.detail
             : "A short sequence to unclench and reset resting jaw posture."}
         </p>
         <div className="mt-4 h-1.5 rounded-full bg-cream/20">
