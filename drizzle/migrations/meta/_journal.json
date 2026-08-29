@@ -43,6 +43,13 @@
       "when": 1788039490656,
       "tag": "0005_anon_device_push",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788040414946,
+      "tag": "0006_allow_self_assign_any_role",
+      "breakpoints": true
     }
   ]
 }
