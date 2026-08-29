@@ -39,11 +39,21 @@ type PatientCard = {
   lastTs: number | null;
 };
 
+type ClinicianRequest = {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  created_at: string;
+};
+
 function ClinicPage() {
   const { user, role, loading } = useSession();
   const navigate = useNavigate();
   const [patients, setPatients] = useState<PatientCard[]>([]);
   const [fetching, setFetching] = useState(true);
+  const [requests, setRequests] = useState<ClinicianRequest[]>([]);
+  const [reqBusy, setReqBusy] = useState<string | null>(null);
+  const [reqError, setReqError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
