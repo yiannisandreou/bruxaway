@@ -56,7 +56,7 @@ export function AppShell({
 
       <nav className="fixed bottom-0 left-1/2 w-full max-w-[430px] -translate-x-1/2 border-t border-clay/15 bg-cream/95 px-5 pt-3 pb-4 backdrop-blur">
         <div className="flex items-center justify-between">
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <Link
               key={tab.to}
               to={tab.to}
