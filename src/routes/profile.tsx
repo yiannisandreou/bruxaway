@@ -323,13 +323,20 @@ function HourWheel({
   const hours = Array.from({ length: max - min + 1 }, (_, i) => min + i);
   const listRef = useRef<HTMLUListElement>(null);
   const scrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mounted = useRef(false);
   const pad = (WHEEL_VISIBLE - 1) / 2; // spacer rows above and below
 
-  // Position the wheel on the current value (mount + external changes).
+  // Position the wheel on the current value: instantly on mount (so the
+  // opening animation can't commit phantom hours), smoothly after that.
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
     const target = (value - min) * WHEEL_ITEM_H;
+    if (!mounted.current) {
+      mounted.current = true;
+      el.scrollTop = target;
+      return;
+    }
     if (Math.abs(el.scrollTop - target) > WHEEL_ITEM_H / 2) {
       el.scrollTo({ top: target, behavior: "smooth" });
     }
