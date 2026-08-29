@@ -162,6 +162,7 @@ export function useEntries() {
     const all = [...readList<Entry>(ENTRIES_KEY), next];
     window.localStorage.setItem(ENTRIES_KEY, JSON.stringify(all));
     broadcast();
+    void import("@/lib/sync").then((m) => m.pushEntries([next]));
     return next;
   }, []);
 
@@ -169,7 +170,9 @@ export function useEntries() {
     const all = readList<Entry>(ENTRIES_KEY).filter((e) => e.id !== id);
     window.localStorage.setItem(ENTRIES_KEY, JSON.stringify(all));
     broadcast();
+    void import("@/lib/sync").then((m) => m.deleteEntry(id));
   }, []);
+
 
   const clearAll = useCallback(() => {
     window.localStorage.removeItem(ENTRIES_KEY);
