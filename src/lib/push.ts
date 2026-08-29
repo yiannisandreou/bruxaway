@@ -1,5 +1,42 @@
 import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
-import { savePushSubscription, removePushSubscription } from "@/lib/push.functions";
+import { deviceId, localTimezone, readSettings } from "@/lib/ema";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  savePushSubscription,
+  removePushSubscription,
+  saveDevicePushSubscription,
+  removeDevicePushSubscription,
+} from "@/lib/push.functions";
+
+async function signedIn(): Promise<boolean> {
+  const { data } = await supabase.auth.getSession();
+  return Boolean(data.session);
+}
+
+function devicePayload(sub: PushSubscription) {
+  const keys = sub.toJSON().keys ?? {};
+  const s = readSettings();
+  return {
+    device_id: deviceId(),
+    endpoint: sub.endpoint,
+    p256dh: keys["p256dh"] ?? "",
+    auth_key: keys["auth"] ?? "",
+    prompts_per_day: s.promptsPerDay,
+    start_hour: s.startHour,
+    end_hour: s.endHour,
+    timezone: localTimezone(),
+  };
+}
+
+/** Pushes changed prompt settings to this device's account-free subscription. */
+export async function syncDeviceSubscriptionSettings(): Promise<void> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  const reg = await navigator.serviceWorker.getRegistration();
+  const sub = await reg?.pushManager.getSubscription();
+  if (!sub) return;
+  await saveDevicePushSubscription({ data: devicePayload(sub) });
+}
+
 
 /** Registers the service worker that handles incoming push events. */
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
