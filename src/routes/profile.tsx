@@ -253,38 +253,26 @@ function ProfilePage() {
       </section>
 
       <section className="mx-5 mt-6 grid grid-cols-2 gap-3">
-        <label className="rounded-2xl bg-sand/70 px-4 py-3">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-clay">
-            Wake hour
-          </span>
-          <input
-            type="number"
-            min={0}
-            max={23}
-            value={settings.startHour}
-            onChange={(e) => {
-              update({ startHour: Math.min(23, Math.max(0, Number(e.target.value))) });
-              void syncSettingsToCloud();
-            }}
-            className="mt-1 w-full bg-transparent font-display text-[24px] leading-none text-brand outline-none"
-          />
-        </label>
-        <label className="rounded-2xl bg-sand/70 px-4 py-3">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-clay">
-            Sleep hour
-          </span>
-          <input
-            type="number"
-            min={1}
-            max={24}
-            value={settings.endHour}
-            onChange={(e) => {
-              update({ endHour: Math.min(24, Math.max(1, Number(e.target.value))) });
-              void syncSettingsToCloud();
-            }}
-            className="mt-1 w-full bg-transparent font-display text-[24px] leading-none text-brand outline-none"
-          />
-        </label>
+        <HourInput
+          label="Wake hour"
+          min={0}
+          max={23}
+          value={settings.startHour}
+          onCommit={(h) => {
+            update({ startHour: h });
+            void syncSettingsToCloud();
+          }}
+        />
+        <HourInput
+          label="Sleep hour"
+          min={1}
+          max={24}
+          value={settings.endHour}
+          onCommit={(h) => {
+            update({ endHour: h });
+            void syncSettingsToCloud();
+          }}
+        />
       </section>
 
       <section className="mx-5 mt-6 space-y-3">
