@@ -30,8 +30,10 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
-  // Sign-up can only claim the patient role. Clinician accounts are granted
-  // by a verified, server-side process — never self-selected.
+  // What the person says they are. Self-service accounts can only ever *claim*
+  // the patient role — clinician access is granted server-side after
+  // verification, so picking "Clinician" only changes where we send them.
+  const [intent, setIntent] = useState<AppRole>("patient");
   const role: AppRole = "patient";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,8 +44,15 @@ function AuthPage() {
 
   const afterAuth = async (userRole: AppRole) => {
     await syncNow().catch(() => undefined);
+    if (intent === "physician" && userRole !== "physician") {
+      setMessage(
+        "You're signed in, but clinician access isn't enabled on this account yet. Your clinic will enable it after verification.",
+      );
+      return;
+    }
     navigate({ to: userRole === "physician" ? "/clinic" : "/", replace: true });
   };
+
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,12 +124,38 @@ function AuthPage() {
         review them.
       </p>
 
-      <p className="mt-4 rounded-2xl bg-sand/70 px-4 py-3 text-[12px] leading-snug text-ink/55">
-        Are you a clinician? Sign in here and your clinic will enable doctor access on your
-        account after verification.
-      </p>
 
 
+
+
+      <div className="mt-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink/45">I am a…</p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {(["patient", "physician"] as AppRole[]).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => {
+                setIntent(option);
+                setMessage(null);
+              }}
+              className={`h-11 rounded-2xl border text-[14px] font-semibold transition ${
+                intent === option
+                  ? "border-brand bg-brand text-cream"
+                  : "border-clay/30 bg-sand/40 text-ink/60"
+              }`}
+            >
+              {option === "patient" ? "Patient" : "Clinician"}
+            </button>
+          ))}
+        </div>
+        {intent === "physician" && (
+          <p className="mt-2 rounded-2xl bg-sand/70 px-4 py-3 text-[12px] leading-snug text-ink/55">
+            Clinician access is enabled by your clinic after verification. Sign in here and the
+            Clinic tab appears once it's approved.
+          </p>
+        )}
+      </div>
 
       <form onSubmit={submit} className="mt-5 space-y-3">
         {mode === "signup" && (
@@ -131,6 +166,7 @@ function AuthPage() {
             className="h-12 w-full rounded-2xl border border-clay/30 bg-sand/40 px-4 text-[15px] outline-none placeholder:text-ink/35 focus:border-brand"
           />
         )}
+
         <input
           type="email"
           required
