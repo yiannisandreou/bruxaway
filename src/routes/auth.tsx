@@ -98,7 +98,10 @@ function AuthPage() {
           return;
         }
         const claimed = await ensureAccount(data.session.user, role, name);
-        await afterAuth(claimed);
+        await afterAuth(claimed, data.session.user.id, {
+          email: data.session.user.email ?? null,
+          full_name: name || null,
+        });
       } else {
         const { data, error: err } = await supabase.auth.signInWithPassword({
           email,
@@ -106,7 +109,10 @@ function AuthPage() {
         });
         if (err) throw err;
         const claimed = await ensureAccount(data.user, role, name || undefined);
-        await afterAuth(claimed);
+        await afterAuth(claimed, data.user.id, {
+          email: data.user.email ?? null,
+          full_name: name || null,
+        });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
