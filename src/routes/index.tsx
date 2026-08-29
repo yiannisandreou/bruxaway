@@ -56,7 +56,6 @@ function NowPage() {
   const todayEpisodes = today.filter((e) => behaviorById(e.behavior).episode).length;
   const week = useMemo(() => lastNDays(entries, 7, now), [entries, now]);
   const yesterday = week[week.length - 2];
-  const weekMax = week;
   const delta =
     yesterday && yesterday.episodes > 0
       ? Math.round(((todayEpisodes - yesterday.episodes) / yesterday.episodes) * 100)
@@ -101,7 +100,7 @@ function NowPage() {
         </div>
 
         <div className="mt-4 grid grid-cols-7 gap-1.5">
-          {weekMax.map((d) => {
+          {week.map((d) => {
             const height = d.reports / maxDay;
             return (
               <div
