@@ -251,6 +251,18 @@ function AuthPage() {
         {error && <p className="text-[13px] text-brand">{error}</p>}
         {message && <p className="text-[13px] text-ink/60">{message}</p>}
 
+        {needsConfirm && (
+          <button
+            type="button"
+            onClick={resendConfirmation}
+            disabled={!email || cooldown > 0}
+            className="h-12 w-full rounded-2xl border border-clay/40 text-[15px] font-semibold text-brand disabled:opacity-60"
+          >
+            {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend confirmation email"}
+          </button>
+        )}
+
+
         <button
           type="submit"
           disabled={busy}
