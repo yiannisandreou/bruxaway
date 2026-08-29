@@ -55,7 +55,7 @@ export const BEHAVIORS: Behavior[] = [
 ];
 
 export const behaviorById = (id: BehaviorId) =>
-  BEHAVIORS.find((b) => b.id === id) ?? BEHAVIORS[0];
+  BEHAVIORS.find((b) => b.id === id) ?? BEHAVIORS[0]!;
 
 export const CONTEXTS = [
   "Work",
@@ -156,7 +156,7 @@ export function useEntries() {
       behavior: entry.behavior,
       contexts: entry.contexts,
       stress: entry.stress,
-      note: entry.note,
+      ...(entry.note ? { note: entry.note } : {}),
       prompted: entry.prompted,
     };
     const all = [...readList<Entry>(ENTRIES_KEY), next];
@@ -228,7 +228,7 @@ export function nextPromptTime(settings: Settings, now = new Date()) {
   const today = promptTimes(settings, now).find((t) => t.getTime() > now.getTime());
   if (today) return today;
   const tomorrow = new Date(now.getTime() + 86_400_000);
-  return promptTimes(settings, tomorrow)[0];
+  return promptTimes(settings, tomorrow)[0]!;
 }
 
 export const fmtTime = (d: Date | number) =>
@@ -278,7 +278,7 @@ export function hourlyClusters(entries: Entry[]) {
   entries
     .filter((e) => behaviorById(e.behavior).episode)
     .forEach((e) => {
-      buckets[new Date(e.ts).getHours()] += 1;
+      buckets[new Date(e.ts).getHours()] = (buckets[new Date(e.ts).getHours()] ?? 0) + 1;
     });
   return buckets;
 }
@@ -288,7 +288,7 @@ export function peakWindow(entries: Entry[]) {
   let best = -1;
   let bestVal = 0;
   for (let h = 0; h < 22; h++) {
-    const v = buckets[h] + buckets[h + 1] + buckets[h + 2];
+    const v = (buckets[h] ?? 0) + (buckets[h + 1] ?? 0) + (buckets[h + 2] ?? 0);
     if (v > bestVal) {
       bestVal = v;
       best = h;
