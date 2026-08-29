@@ -53,7 +53,7 @@ function AuthPage() {
     await syncNow().catch(() => undefined);
     if (intent === "physician" && userRole !== "physician") {
       const result = await requestOrBootstrapClinician({
-        data: { fullName: user?.full_name ?? name || undefined },
+        data: { fullName: (user?.full_name ?? name) || undefined },
       }).catch(() => null);
       if (result?.ok && result.bootstrapped) {
         // Force a session re-read so useSession picks up the new physician role.
