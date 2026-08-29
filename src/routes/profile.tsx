@@ -11,7 +11,13 @@ import {
   useEntries,
   useHydrated,
   useSettings,
+  syncSettingsToCloud,
 } from "@/lib/ema";
+import {
+  enableNotifications,
+  disableNotifications,
+  pushSupported,
+} from "@/lib/push";
 
 
 export const Route = createFileRoute("/profile")({
@@ -41,6 +47,27 @@ function ProfilePage() {
   const { user, role, loading: sessionLoading } = useSession();
   const navigate = useNavigate();
   const [syncState, setSyncState] = useState<string | null>(null);
+  const [notifMsg, setNotifMsg] = useState<string | null>(null);
+
+  const canPush = pushSupported();
+
+  const toggleNotifications = async () => {
+    if (settings.notifications) {
+      await disableNotifications();
+      update({ notifications: false });
+      setNotifMsg("Reminders off.");
+      return;
+    }
+    setNotifMsg("Enabling…");
+    const res = await enableNotifications();
+    if (res.ok) {
+      update({ notifications: true });
+      void syncSettingsToCloud();
+      setNotifMsg("On — random prompts will arrive during your waking hours.");
+    } else {
+      setNotifMsg(res.reason ?? "Couldn't enable reminders.");
+    }
+  };
 
   const doSync = async () => {
     setSyncState("Syncing…");
