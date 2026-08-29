@@ -203,6 +203,39 @@ export type Database = {
         }
         Relationships: []
       }
+      role_requests: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          reviewed_at: string | null
+          reviewer_id: string | null
+          status: Database["public"]["Enums"]["app_role_request_status"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["app_role_request_status"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: Database["public"]["Enums"]["app_role_request_status"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -271,6 +304,7 @@ export type Database = {
     }
     Enums: {
       app_role: "patient" | "physician"
+      app_role_request_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -399,6 +433,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["patient", "physician"],
+      app_role_request_status: ["pending", "approved", "rejected"],
     },
   },
 } as const

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { ensureAccount, type AppRole } from "@/lib/session";
+import { requestOrBootstrapClinician } from "@/lib/clinician.functions";
 import { syncNow } from "@/lib/sync";
 
 export const PENDING_ROLE_KEY = "unclench.pendingRole";
@@ -42,11 +43,26 @@ function AuthPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const afterAuth = async (userRole: AppRole) => {
+  // When someone signs up intending to be a clinician, either make them the
+  // first physician (bootstrap, if none exist yet) or record a pending request
+  // for an existing clinician to approve.
+  const afterAuth = async (
+    userRole: AppRole,
+    user?: { email?: string | null; full_name?: string | null } | null,
+  ) => {
     await syncNow().catch(() => undefined);
     if (intent === "physician" && userRole !== "physician") {
+      const result = await requestOrBootstrapClinician({
+        data: { fullName: (user?.full_name ?? name) || undefined },
+      }).catch(() => null);
+      if (result?.ok && result.bootstrapped) {
+        // Force a session re-read so useSession picks up the new physician role.
+        await supabase.auth.refreshSession().catch(() => undefined);
+        navigate({ to: "/clinic", replace: true });
+        return;
+      }
       setMessage(
-        "You're signed in, but clinician access isn't enabled on this account yet. Your clinic will enable it after verification.",
+        "Your clinician request has been sent. Once a clinician approves it, the Clinic tab appears here automatically.",
       );
       return;
     }
@@ -76,7 +92,10 @@ function AuthPage() {
           return;
         }
         const claimed = await ensureAccount(data.session.user, role, name);
-        await afterAuth(claimed);
+        await afterAuth(claimed, {
+          email: data.session.user.email ?? null,
+          full_name: name || null,
+        });
       } else {
         const { data, error: err } = await supabase.auth.signInWithPassword({
           email,
@@ -84,7 +103,10 @@ function AuthPage() {
         });
         if (err) throw err;
         const claimed = await ensureAccount(data.user, role, name || undefined);
-        await afterAuth(claimed);
+        await afterAuth(claimed, {
+          email: data.user.email ?? null,
+          full_name: name || null,
+        });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -107,7 +129,10 @@ function AuthPage() {
     const { data } = await supabase.auth.getUser();
     if (data.user) {
       const claimed = await ensureAccount(data.user, role);
-      await afterAuth(claimed);
+      await afterAuth(claimed, {
+        email: data.user.email ?? null,
+        full_name: (data.user.user_metadata?.["full_name"] as string | undefined) ?? null,
+      });
     }
   };
 
@@ -152,8 +177,9 @@ function AuthPage() {
         </div>
         {intent === "physician" && (
           <p className="mt-2 rounded-2xl bg-sand/70 px-4 py-3 text-[12px] leading-snug text-ink/55">
-            Clinician access is enabled by your clinic after verification. Sign in here and the
-            Clinic tab appears once it's approved.
+            Clinician access needs approval. After you create your account, your request is sent to
+            an existing clinician, who approves it from the Clinic view. The Clinic tab appears here
+            once approved.
           </p>
         )}
       </div>
