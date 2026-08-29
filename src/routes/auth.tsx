@@ -131,6 +131,35 @@ function AuthPage() {
 
 
 
+      <div className="mt-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink/45">I am a…</p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {(["patient", "physician"] as AppRole[]).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => {
+                setIntent(option);
+                setMessage(null);
+              }}
+              className={`h-11 rounded-2xl border text-[14px] font-semibold transition ${
+                intent === option
+                  ? "border-brand bg-brand text-cream"
+                  : "border-clay/30 bg-sand/40 text-ink/60"
+              }`}
+            >
+              {option === "patient" ? "Patient" : "Clinician"}
+            </button>
+          ))}
+        </div>
+        {intent === "physician" && (
+          <p className="mt-2 rounded-2xl bg-sand/70 px-4 py-3 text-[12px] leading-snug text-ink/55">
+            Clinician access is enabled by your clinic after verification. Sign in here and the
+            Clinic tab appears once it's approved.
+          </p>
+        )}
+      </div>
+
       <form onSubmit={submit} className="mt-5 space-y-3">
         {mode === "signup" && (
           <input
@@ -140,6 +169,7 @@ function AuthPage() {
             className="h-12 w-full rounded-2xl border border-clay/30 bg-sand/40 px-4 text-[15px] outline-none placeholder:text-ink/35 focus:border-brand"
           />
         )}
+
         <input
           type="email"
           required
