@@ -16,6 +16,7 @@ import { Route as CuesRouteImport } from './routes/cues'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as TrendsRouteImport } from './routes/trends'
 import { Route as AuthenticatedClinicIndexRouteImport } from './routes/_authenticated/clinic.index'
+import { Route as AuthenticatedClinicPatientIdRouteImport } from './routes/_authenticated/clinic.$patientId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +53,12 @@ const AuthenticatedClinicIndexRoute =
     path: '/clinic/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedClinicPatientIdRoute =
+  AuthenticatedClinicPatientIdRouteImport.update({
+    id: '/clinic/$patientId',
+    path: '/clinic/$patientId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/cues': typeof CuesRoute
   '/profile': typeof ProfileRoute
   '/trends': typeof TrendsRoute
+  '/clinic/$patientId': typeof AuthenticatedClinicPatientIdRoute
   '/clinic/': typeof AuthenticatedClinicIndexRoute
 }
 export interface FileRoutesByTo {
@@ -67,6 +75,7 @@ export interface FileRoutesByTo {
   '/cues': typeof CuesRoute
   '/profile': typeof ProfileRoute
   '/trends': typeof TrendsRoute
+  '/clinic/$patientId': typeof AuthenticatedClinicPatientIdRoute
   '/clinic': typeof AuthenticatedClinicIndexRoute
 }
 export interface FileRoutesById {
@@ -77,13 +86,28 @@ export interface FileRoutesById {
   '/cues': typeof CuesRoute
   '/profile': typeof ProfileRoute
   '/trends': typeof TrendsRoute
+  '/_authenticated/clinic/$patientId': typeof AuthenticatedClinicPatientIdRoute
   '/_authenticated/clinic/': typeof AuthenticatedClinicIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/cues' | '/profile' | '/trends' | '/clinic/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/cues'
+    | '/profile'
+    | '/trends'
+    | '/clinic/$patientId'
+    | '/clinic/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/cues' | '/profile' | '/trends' | '/clinic'
+  to:
+    | '/'
+    | '/auth'
+    | '/cues'
+    | '/profile'
+    | '/trends'
+    | '/clinic/$patientId'
+    | '/clinic'
   id:
     | '__root__'
     | '/'
@@ -92,6 +116,7 @@ export interface FileRouteTypes {
     | '/cues'
     | '/profile'
     | '/trends'
+    | '/_authenticated/clinic/$patientId'
     | '/_authenticated/clinic/'
   fileRoutesById: FileRoutesById
 }
@@ -155,14 +180,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClinicIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/clinic/$patientId': {
+      id: '/_authenticated/clinic/$patientId'
+      path: '/clinic/$patientId'
+      fullPath: '/clinic/$patientId'
+      preLoaderRoute: typeof AuthenticatedClinicPatientIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedClinicPatientIdRoute: typeof AuthenticatedClinicPatientIdRoute
   AuthenticatedClinicIndexRoute: typeof AuthenticatedClinicIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedClinicPatientIdRoute: AuthenticatedClinicPatientIdRoute,
   AuthenticatedClinicIndexRoute: AuthenticatedClinicIndexRoute,
 }
 
