@@ -36,7 +36,6 @@ function ProfilePage() {
   const [confirming, setConfirming] = useState(false);
 
   const episodes = entries.filter((e) => behaviorById(e.behavior).episode).length;
-  const schedule = useMemo(() => promptTimes(settings), [settings]);
 
   const exportCsv = () => {
     const rows = [
