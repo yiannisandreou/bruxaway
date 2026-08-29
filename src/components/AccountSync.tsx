@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { ensureAccount, useSession, type AppRole } from "@/lib/session";
+import { ensureAccount, useSession } from "@/lib/session";
 import { syncNow } from "@/lib/sync";
 
 const PENDING_ROLE_KEY = "unclench.pendingRole";
