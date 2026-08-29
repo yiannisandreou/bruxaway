@@ -7,7 +7,6 @@ import {
   behaviorById,
   fmtTime,
   lastNDays,
-  nextPromptTime,
   peakWindow,
   promptTimes,
   sameDay,
@@ -60,7 +59,7 @@ function NowPage() {
     yesterday && yesterday.episodes > 0
       ? Math.round(((todayEpisodes - yesterday.episodes) / yesterday.episodes) * 100)
       : null;
-  const next = nextPromptTime(settings, now);
+  
   const scheduleToday = promptTimes(settings, now);
   const answered = today.filter((e) => e.prompted).length;
   const peak = useMemo(() => peakWindow(entries), [entries]);
