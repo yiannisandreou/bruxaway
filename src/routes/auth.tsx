@@ -42,11 +42,33 @@ function AuthPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const afterAuth = async (userRole: AppRole) => {
+  // When someone signs up intending to be a clinician, record a pending
+  // request so an existing clinician can approve them from the Clinic view.
+  const submitClinicianRequest = async (userId: string, user?: { email?: string | null; full_name?: string | null } | null) => {
+    await supabase
+      .from("role_requests")
+      .upsert(
+        {
+          user_id: userId,
+          email: (user?.email ?? email) || null,
+          full_name: (user?.full_name ?? name) || null,
+          status: "pending",
+        },
+        { onConflict: "user_id" },
+      )
+      .then(({ error }) => {
+        if (error && error.code !== "23505") {
+          // ignore duplicate-key; non-duplicate errors are non-fatal here
+        }
+      });
+  };
+
+  const afterAuth = async (userRole: AppRole, userId?: string, user?: { email?: string | null; full_name?: string | null } | null) => {
     await syncNow().catch(() => undefined);
     if (intent === "physician" && userRole !== "physician") {
+      if (userId) await submitClinicianRequest(userId, user).catch(() => undefined);
       setMessage(
-        "You're signed in, but clinician access isn't enabled on this account yet. Your clinic will enable it after verification.",
+        "Your clinician request has been sent. Once a clinician approves it, the Clinic tab appears here automatically.",
       );
       return;
     }
