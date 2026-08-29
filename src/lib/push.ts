@@ -60,8 +60,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 /**
  * Requests notification permission, subscribes this device to push, and stores
  * the subscription server-side so the cron can deliver random check-in prompts.
- * Returns true on success. Requires a signed-in account (subscription is saved
- * to the user's row).
+ * No account required: signed-out devices are stored against a local device id.
  */
 export async function enableNotifications(): Promise<{ ok: boolean; reason?: string }> {
   if (typeof navigator === "undefined" || !("PushManager" in window)) {
@@ -81,20 +80,23 @@ export async function enableNotifications(): Promise<{ ok: boolean; reason?: str
     });
   }
 
-  const json = sub.toJSON();
-  const keys = json.keys ?? {};
+  const keys = sub.toJSON().keys ?? {};
   try {
-    await savePushSubscription({
-      data: {
-        endpoint: sub.endpoint,
-        p256dh: keys["p256dh"] ?? "",
-        auth_key: keys["auth"] ?? "",
-      },
-    });
+    if (await signedIn()) {
+      await savePushSubscription({
+        data: {
+          endpoint: sub.endpoint,
+          p256dh: keys["p256dh"] ?? "",
+          auth_key: keys["auth"] ?? "",
+        },
+      });
+    } else {
+      await saveDevicePushSubscription({ data: devicePayload(sub) });
+    }
   } catch {
-    // If saving fails (e.g. not signed in), unsubscribe locally so state stays honest.
+    // Keep local state honest if the subscription couldn't be stored.
     await sub.unsubscribe();
-    return { ok: false, reason: "Sign in to enable reminders." };
+    return { ok: false, reason: "Couldn't save reminders. Check your connection and try again." };
   }
   return { ok: true };
 }
@@ -107,17 +109,18 @@ export async function disableNotifications(): Promise<void> {
     if (!reg) return;
     const sub = await reg.pushManager.getSubscription();
     if (sub) {
-      try {
-        await removePushSubscription({ data: { endpoint: sub.endpoint } });
-      } catch {
-        // ignore — still unsubscribe locally
-      }
+      // Remove from both stores — the device may have signed in since enabling.
+      await removeDevicePushSubscription({
+        data: { device_id: deviceId(), endpoint: sub.endpoint },
+      }).catch(() => undefined);
+      await removePushSubscription({ data: { endpoint: sub.endpoint } }).catch(() => undefined);
       await sub.unsubscribe();
     }
   } catch {
     // ignore
   }
 }
+
 
 /** True when this browser can actually do push + service workers. */
 export function pushSupported(): boolean {
