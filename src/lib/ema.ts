@@ -335,16 +335,39 @@ export function localTimezone(): string {
   }
 }
 
-/** Writes the user's prompt frequency, waking window, and timezone to their
- *  profile so the reminder cron can schedule random prompts server-side. */
+/** Current settings, read straight from local storage. */
+export function readSettings(): Settings {
+  return read<Settings>(SETTINGS_KEY, DEFAULT_SETTINGS);
+}
+
+const DEVICE_KEY = "unclench.deviceId";
+
+/** Stable random id for this browser, used for account-free push reminders. */
+export function deviceId(): string {
+  const existing = window.localStorage.getItem(DEVICE_KEY);
+  if (existing) return existing;
+  const id = crypto.randomUUID();
+  window.localStorage.setItem(DEVICE_KEY, id);
+  return id;
+}
+
+/** Writes the user's prompt frequency, waking window, and timezone to the
+ *  backend so the reminder cron can schedule random prompts server-side.
+ *  Works signed in (profile row) or signed out (device subscription row). */
 export async function syncSettingsToCloud(): Promise<void> {
   if (typeof window === "undefined") return;
+  const s = readSettings();
   const { supabase } = await import("@/integrations/supabase/client");
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
-  const s = read<Settings>(SETTINGS_KEY, DEFAULT_SETTINGS);
+  if (!user) {
+    if (s.notifications) {
+      const { syncDeviceSubscriptionSettings } = await import("@/lib/push");
+      await syncDeviceSubscriptionSettings().catch(() => undefined);
+    }
+    return;
+  }
   await supabase.from("profiles").upsert({
     id: user.id,
     prompts_per_day: s.promptsPerDay,
@@ -353,3 +376,4 @@ export async function syncSettingsToCloud(): Promise<void> {
     timezone: localTimezone(),
   });
 }
+
