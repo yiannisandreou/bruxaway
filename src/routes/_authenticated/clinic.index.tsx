@@ -3,6 +3,10 @@ import { useCallback, useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { linkPatientByEmail } from "@/lib/care.functions";
+import {
+  approveClinician,
+  rejectClinician,
+} from "@/lib/clinician.functions";
 import { behaviorById, sameDay, startOfDay } from "@/lib/ema";
 import { useSession } from "@/lib/session";
 
