@@ -128,6 +128,7 @@ function AuthPage() {
 
 
 
+      {mode === "signup" && (
       <div className="mt-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink/45">I am a…</p>
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -156,6 +157,7 @@ function AuthPage() {
           </p>
         )}
       </div>
+      )}
 
       <form onSubmit={submit} className="mt-5 space-y-3">
         {mode === "signup" && (
