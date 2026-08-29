@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CuesRouteImport } from './routes/cues'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as TrendsRouteImport } from './routes/trends'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const CuesRoute = CuesRouteImport.update({
   path: '/cues',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TrendsRoute = TrendsRouteImport.update({
   id: '/trends',
   path: '/trends',
@@ -32,30 +38,34 @@ const TrendsRoute = TrendsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cues': typeof CuesRoute
+  '/profile': typeof ProfileRoute
   '/trends': typeof TrendsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cues': typeof CuesRoute
+  '/profile': typeof ProfileRoute
   '/trends': typeof TrendsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cues': typeof CuesRoute
+  '/profile': typeof ProfileRoute
   '/trends': typeof TrendsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cues' | '/trends'
+  fullPaths: '/' | '/cues' | '/profile' | '/trends'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cues' | '/trends'
-  id: '__root__' | '/' | '/cues' | '/trends'
+  to: '/' | '/cues' | '/profile' | '/trends'
+  id: '__root__' | '/' | '/cues' | '/profile' | '/trends'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CuesRoute: typeof CuesRoute
+  ProfileRoute: typeof ProfileRoute
   TrendsRoute: typeof TrendsRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CuesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/trends': {
       id: '/trends'
       path: '/trends'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CuesRoute: CuesRoute,
+  ProfileRoute: ProfileRoute,
   TrendsRoute: TrendsRoute,
 }
 export const routeTree = rootRouteImport
