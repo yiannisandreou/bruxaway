@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -42,6 +42,31 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [needsConfirm, setNeedsConfirm] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = window.setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [cooldown]);
+
+  const resendConfirmation = async () => {
+    setMessage(null);
+    setError(null);
+    setCooldown(60);
+    const { error: err } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/confirm` },
+    });
+    if (err) setError(err.message);
+    else
+      setMessage(
+        "Confirmation email sent. Open the newest one — older links stop working once used.",
+      );
+  };
+
 
   // When someone signs up intending to be a clinician, either make them the
   // first physician (bootstrap, if none exist yet) or record a pending request
@@ -75,6 +100,7 @@ function AuthPage() {
     setBusy(true);
     setError(null);
     setMessage(null);
+    setNeedsConfirm(false);
     try {
       if (mode === "signup") {
         window.localStorage.setItem(PENDING_ROLE_KEY, role);
@@ -82,7 +108,7 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}/confirm`,
             data: { full_name: name, role },
           },
         });
@@ -109,11 +135,18 @@ function AuthPage() {
         });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      const raw = err instanceof Error ? err.message : "Something went wrong.";
+      if (/not confirmed/i.test(raw)) {
+        setNeedsConfirm(true);
+        setError("This email hasn't been confirmed yet. Send yourself a fresh link below.");
+      } else {
+        setError(raw);
+      }
     } finally {
       setBusy(false);
     }
   };
+
 
   const google = async () => {
     setError(null);
@@ -217,6 +250,18 @@ function AuthPage() {
 
         {error && <p className="text-[13px] text-brand">{error}</p>}
         {message && <p className="text-[13px] text-ink/60">{message}</p>}
+
+        {needsConfirm && (
+          <button
+            type="button"
+            onClick={resendConfirmation}
+            disabled={!email || cooldown > 0}
+            className="h-12 w-full rounded-2xl border border-clay/40 text-[15px] font-semibold text-brand disabled:opacity-60"
+          >
+            {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend confirmation email"}
+          </button>
+        )}
+
 
         <button
           type="submit"

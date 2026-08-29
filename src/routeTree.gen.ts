@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ConfirmRouteImport } from './routes/confirm'
 import { Route as CuesRouteImport } from './routes/cues'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as TrendsRouteImport } from './routes/trends'
@@ -31,6 +32,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfirmRoute = ConfirmRouteImport.update({
+  id: '/confirm',
+  path: '/confirm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CuesRoute = CuesRouteImport.update({
@@ -69,6 +75,7 @@ const ApiPublicCronPromptRoute = ApiPublicCronPromptRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/confirm': typeof ConfirmRoute
   '/cues': typeof CuesRoute
   '/profile': typeof ProfileRoute
   '/trends': typeof TrendsRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/confirm': typeof ConfirmRoute
   '/cues': typeof CuesRoute
   '/profile': typeof ProfileRoute
   '/trends': typeof TrendsRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/confirm': typeof ConfirmRoute
   '/cues': typeof CuesRoute
   '/profile': typeof ProfileRoute
   '/trends': typeof TrendsRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/confirm'
     | '/cues'
     | '/profile'
     | '/trends'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/confirm'
     | '/cues'
     | '/profile'
     | '/trends'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/confirm'
     | '/cues'
     | '/profile'
     | '/trends'
@@ -136,6 +148,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ConfirmRoute: typeof ConfirmRoute
   CuesRoute: typeof CuesRoute
   ProfileRoute: typeof ProfileRoute
   TrendsRoute: typeof TrendsRoute
@@ -163,6 +176,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confirm': {
+      id: '/confirm'
+      path: '/confirm'
+      fullPath: '/confirm'
+      preLoaderRoute: typeof ConfirmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cues': {
@@ -227,6 +247,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ConfirmRoute: ConfirmRoute,
   CuesRoute: CuesRoute,
   ProfileRoute: ProfileRoute,
   TrendsRoute: TrendsRoute,
