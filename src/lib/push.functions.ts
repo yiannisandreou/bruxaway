@@ -45,3 +45,47 @@ export const removePushSubscription = createServerFn({ method: "POST" })
       .eq("endpoint", data.endpoint);
     return { ok: true };
   });
+
+const deviceInput = z.object({
+  device_id: z.string().uuid(),
+  endpoint: z.string().url().startsWith("https://"),
+  p256dh: z.string().min(1).max(200),
+  auth_key: z.string().min(1).max(200),
+  prompts_per_day: z.number().int().min(1).max(24),
+  start_hour: z.number().int().min(0).max(23),
+  end_hour: z.number().int().min(1).max(24),
+  timezone: z.string().min(1).max(64),
+});
+
+/**
+ * Stores a push subscription for a device that has no account. Deliberately
+ * unauthenticated: reminders must work without signing in. Writes go through
+ * trusted server code only — the table has no client-reachable grants.
+ */
+export const saveDevicePushSubscription = createServerFn({ method: "POST" })
+  .inputValidator((input) => deviceInput.parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("device_push_subscriptions")
+      .upsert({ ...data, updated_at: new Date().toISOString() }, { onConflict: "device_id,endpoint" });
+    if (error) throw error;
+    return { ok: true };
+  });
+
+/** Removes an account-less device subscription (reminders turned off). */
+export const removeDevicePushSubscription = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({ device_id: z.string().uuid(), endpoint: z.string().url() })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin
+      .from("device_push_subscriptions")
+      .delete()
+      .eq("device_id", data.device_id)
+      .eq("endpoint", data.endpoint);
+    return { ok: true };
+  });
