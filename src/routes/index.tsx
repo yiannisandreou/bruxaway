@@ -7,7 +7,6 @@ import {
   behaviorById,
   fmtTime,
   lastNDays,
-  nextPromptTime,
   peakWindow,
   promptTimes,
   sameDay,
@@ -60,7 +59,7 @@ function NowPage() {
     yesterday && yesterday.episodes > 0
       ? Math.round(((todayEpisodes - yesterday.episodes) / yesterday.episodes) * 100)
       : null;
-  const next = nextPromptTime(settings, now);
+  
   const scheduleToday = promptTimes(settings, now);
   const answered = today.filter((e) => e.prompted).length;
   const peak = useMemo(() => peakWindow(entries), [entries]);
@@ -127,10 +126,9 @@ function NowPage() {
 
       <section className="mx-5 mt-3 rounded-2xl bg-sand/70 px-4 py-3">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-clay">
-          Next prompt
+          Today's progress
         </p>
         <p className="mt-1 text-[13px] leading-snug">
-          <span className="font-semibold">{fmtTime(next)}</span> ·{" "}
           {answered}/{settings.promptsPerDay} of today's prompts answered.{" "}
           {peak
             ? `Your episodes cluster around ${peak.label}.`
