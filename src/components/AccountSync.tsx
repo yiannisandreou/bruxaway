@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
 
-const PENDING_ROLE_KEY = "unclench.pendingRole";
-
 import { ensureAccount, useSession, type AppRole } from "@/lib/session";
 import { syncNow } from "@/lib/sync";
+
+const PENDING_ROLE_KEY = "unclench.pendingRole";
 
 /**
  * Mounted once at the root: whenever a session appears, makes sure the account
