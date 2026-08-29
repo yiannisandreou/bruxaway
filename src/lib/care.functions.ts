@@ -25,14 +25,18 @@ export const linkPatientByEmail = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // One generic message for every lookup outcome, so this form cannot be used
+    // to enumerate which emails have accounts or what role they hold.
+    const notFound = "Could not add that patient. Check the email and try again.";
+
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("id, email, full_name")
       .eq("email", data.email)
       .maybeSingle();
 
-    if (!profile) return fail("No Unclench account uses that email yet.");
-    if (profile.id === context.userId) return fail("That is your own clinician account.");
+    if (!profile) return fail(notFound);
+    if (profile.id === context.userId) return fail(notFound);
 
     const { data: patientRole } = await supabaseAdmin
       .from("user_roles")
@@ -40,7 +44,7 @@ export const linkPatientByEmail = createServerFn({ method: "POST" })
       .eq("user_id", profile.id)
       .eq("role", "patient")
       .maybeSingle();
-    if (!patientRole) return fail("That account is not registered as a patient.");
+    if (!patientRole) return fail(notFound);
 
     const { error } = await supabaseAdmin
       .from("care_links")
