@@ -35,6 +35,48 @@ export type Database = {
         }
         Relationships: []
       }
+      device_push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          device_id: string
+          end_hour: number
+          endpoint: string
+          id: string
+          p256dh: string
+          prompts_per_day: number
+          start_hour: number
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          device_id: string
+          end_hour?: number
+          endpoint: string
+          id?: string
+          p256dh: string
+          prompts_per_day?: number
+          start_hour?: number
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          device_id?: string
+          end_hour?: number
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          prompts_per_day?: number
+          start_hour?: number
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       entries: {
         Row: {
           behavior: string
@@ -110,21 +152,24 @@ export type Database = {
       prompt_events: {
         Row: {
           answered: boolean
+          device_id: string | null
           fired_at: string
           id: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           answered?: boolean
+          device_id?: string | null
           fired_at?: string
           id?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           answered?: boolean
+          device_id?: string | null
           fired_at?: string
           id?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -184,6 +229,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      eligible_prompt_devices: {
+        Args: never
+        Returns: {
+          auth_key: string
+          device_id: string
+          end_hour: number
+          endpoint: string
+          fired_today: number
+          local_hour: number
+          p256dh: string
+          prompts_per_day: number
+          start_hour: number
+        }[]
+      }
       eligible_prompt_users: {
         Args: never
         Returns: {

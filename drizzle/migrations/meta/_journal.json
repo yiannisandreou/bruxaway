@@ -36,6 +36,13 @@
       "when": 1788037868714,
       "tag": "0004_harden_roles_and_definer_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788039490656,
+      "tag": "0005_anon_device_push",
+      "breakpoints": true
     }
   ]
 }
