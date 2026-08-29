@@ -157,6 +157,7 @@ function AuthPage() {
           </p>
         )}
       </div>
+      )}
 
       <form onSubmit={submit} className="mt-5 space-y-3">
         {mode === "signup" && (
