@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CuesRouteImport } from './routes/cues'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as TrendsRouteImport } from './routes/trends'
@@ -17,6 +18,11 @@ import { Route as TrendsRouteImport } from './routes/trends'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CuesRoute = CuesRouteImport.update({
@@ -37,12 +43,14 @@ const TrendsRoute = TrendsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/cues': typeof CuesRoute
   '/profile': typeof ProfileRoute
   '/trends': typeof TrendsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/cues': typeof CuesRoute
   '/profile': typeof ProfileRoute
   '/trends': typeof TrendsRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/cues': typeof CuesRoute
   '/profile': typeof ProfileRoute
   '/trends': typeof TrendsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cues' | '/profile' | '/trends'
+  fullPaths: '/' | '/auth' | '/cues' | '/profile' | '/trends'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cues' | '/profile' | '/trends'
-  id: '__root__' | '/' | '/cues' | '/profile' | '/trends'
+  to: '/' | '/auth' | '/cues' | '/profile' | '/trends'
+  id: '__root__' | '/' | '/auth' | '/cues' | '/profile' | '/trends'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   CuesRoute: typeof CuesRoute
   ProfileRoute: typeof ProfileRoute
   TrendsRoute: typeof TrendsRoute
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cues': {
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   CuesRoute: CuesRoute,
   ProfileRoute: ProfileRoute,
   TrendsRoute: TrendsRoute,
