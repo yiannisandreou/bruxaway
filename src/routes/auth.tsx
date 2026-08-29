@@ -92,7 +92,7 @@ function AuthPage() {
           return;
         }
         const claimed = await ensureAccount(data.session.user, role, name);
-        await afterAuth(claimed, data.session.user.id, {
+        await afterAuth(claimed, {
           email: data.session.user.email ?? null,
           full_name: name || null,
         });
@@ -103,7 +103,7 @@ function AuthPage() {
         });
         if (err) throw err;
         const claimed = await ensureAccount(data.user, role, name || undefined);
-        await afterAuth(claimed, data.user.id, {
+        await afterAuth(claimed, {
           email: data.user.email ?? null,
           full_name: name || null,
         });
@@ -129,7 +129,7 @@ function AuthPage() {
     const { data } = await supabase.auth.getUser();
     if (data.user) {
       const claimed = await ensureAccount(data.user, role);
-      await afterAuth(claimed, data.user.id, {
+      await afterAuth(claimed, {
         email: data.user.email ?? null,
         full_name: (data.user.user_metadata?.["full_name"] as string | undefined) ?? null,
       });
