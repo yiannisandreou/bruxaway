@@ -100,6 +100,7 @@ function AuthPage() {
     setBusy(true);
     setError(null);
     setMessage(null);
+    setNeedsConfirm(false);
     try {
       if (mode === "signup") {
         window.localStorage.setItem(PENDING_ROLE_KEY, role);
@@ -107,7 +108,7 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}/confirm`,
             data: { full_name: name, role },
           },
         });
@@ -134,11 +135,18 @@ function AuthPage() {
         });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      const raw = err instanceof Error ? err.message : "Something went wrong.";
+      if (/not confirmed/i.test(raw)) {
+        setNeedsConfirm(true);
+        setError("This email hasn't been confirmed yet. Send yourself a fresh link below.");
+      } else {
+        setError(raw);
+      }
     } finally {
       setBusy(false);
     }
   };
+
 
   const google = async () => {
     setError(null);
