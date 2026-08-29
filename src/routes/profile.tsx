@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
@@ -304,7 +304,10 @@ function ProfilePage() {
   );
 }
 
-function HourInput({
+const WHEEL_ITEM_H = 40;
+const WHEEL_VISIBLE = 5; // odd number — middle row is the selected one
+
+function HourWheel({
   label,
   min,
   max,
@@ -317,46 +320,105 @@ function HourInput({
   value: number;
   onCommit: (hour: number) => void;
 }) {
-  const [draft, setDraft] = useState(String(value));
+  const hours = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+  const listRef = useRef<HTMLUListElement>(null);
+  const scrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pad = (WHEEL_VISIBLE - 1) / 2; // spacer rows above and below
 
-  // Keep the field in sync when the value changes from elsewhere.
+  // Position the wheel on the current value (mount + external changes).
   useEffect(() => {
-    setDraft(String(value));
-  }, [value]);
+    const el = listRef.current;
+    if (!el) return;
+    const target = (value - min) * WHEEL_ITEM_H;
+    if (Math.abs(el.scrollTop - target) > WHEEL_ITEM_H / 2) {
+      el.scrollTo({ top: target, behavior: "smooth" });
+    }
+  }, [value, min]);
 
-  const commit = (raw: string) => {
-    const parsed = Number(raw);
-    if (raw.trim() === "" || Number.isNaN(parsed)) return; // let the user keep typing
-    const clamped = Math.min(max, Math.max(min, Math.trunc(parsed)));
-    if (clamped !== value) onCommit(clamped);
+  useEffect(
+    () => () => {
+      if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    },
+    [],
+  );
+
+  const handleScroll = () => {
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    scrollTimer.current = setTimeout(() => {
+      const el = listRef.current;
+      if (!el) return;
+      const idx = Math.round(el.scrollTop / WHEEL_ITEM_H);
+      const hour = hours[Math.min(hours.length - 1, Math.max(0, idx))];
+      if (hour !== undefined && hour !== value) onCommit(hour);
+    }, 140);
   };
 
   return (
-    <label className="rounded-2xl bg-sand/70 px-4 py-3">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-clay">
+    <div className="rounded-2xl bg-sand/70 px-4 py-3">
+      <p className="text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-clay">
         {label}
-      </span>
-      <input
-        type="number"
-        inputMode="numeric"
-        min={min}
-        max={max}
-        value={draft}
-        onChange={(e) => {
-          setDraft(e.target.value);
-          commit(e.target.value);
-        }}
-        onBlur={() => {
-          const parsed = Number(draft);
-          if (draft.trim() === "" || Number.isNaN(parsed)) {
-            setDraft(String(value)); // restore last valid value
-          } else {
-            const clamped = Math.min(max, Math.max(min, Math.trunc(parsed)));
-            setDraft(String(clamped));
-          }
-        }}
-        className="mt-1 w-full bg-transparent font-display text-[24px] leading-none text-brand outline-none"
-      />
-    </label>
+      </p>
+      <div
+        className="relative mt-2"
+        style={{ height: WHEEL_ITEM_H * WHEEL_VISIBLE }}
+      >
+        {/* selection band */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-2 rounded-xl border border-brand/25 bg-brand/10"
+          style={{ top: WHEEL_ITEM_H * pad, height: WHEEL_ITEM_H }}
+        />
+        {/* soft fade masks */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-sand via-sand/60 to-transparent"
+          style={{ height: WHEEL_ITEM_H * pad }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-sand via-sand/60 to-transparent"
+          style={{ height: WHEEL_ITEM_H * pad }}
+        />
+        <ul
+          ref={listRef}
+          onScroll={handleScroll}
+          className="absolute inset-0 snap-y snap-mandatory overflow-y-scroll [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          role="listbox"
+          aria-label={label}
+          aria-activedescendant={`${label}-${value}`}
+        >
+          {Array.from({ length: pad }, (_, i) => (
+            <li key={`pad-top-${i}`} style={{ height: WHEEL_ITEM_H }} aria-hidden />
+          ))}
+          {hours.map((h) => {
+            const selected = h === value;
+            return (
+              <li
+                key={h}
+                id={`${label}-${h}`}
+                role="option"
+                aria-selected={selected}
+                onClick={() => {
+                  listRef.current?.scrollTo({
+                    top: (h - min) * WHEEL_ITEM_H,
+                    behavior: "smooth",
+                  });
+                  if (!selected) onCommit(h);
+                }}
+                className={`flex snap-center items-center justify-center font-display leading-none transition-colors ${
+                  selected ? "text-[22px] font-semibold text-brand" : "text-[16px] text-ink/35"
+                }`}
+                style={{ height: WHEEL_ITEM_H }}
+              >
+                {String(h % 24).padStart(2, "0")}:00
+              </li>
+            );
+          })}
+          {Array.from({ length: pad }, (_, i) => (
+            <li key={`pad-bot-${i}`} style={{ height: WHEEL_ITEM_H }} aria-hidden />
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }
