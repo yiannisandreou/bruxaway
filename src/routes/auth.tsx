@@ -124,10 +124,7 @@ function AuthPage() {
         review them.
       </p>
 
-      <p className="mt-4 rounded-2xl bg-sand/70 px-4 py-3 text-[12px] leading-snug text-ink/55">
-        Are you a clinician? Sign in here and your clinic will enable doctor access on your
-        account after verification.
-      </p>
+
 
 
 
