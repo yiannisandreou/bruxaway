@@ -8,7 +8,6 @@ import {
   fmtTime,
   lastNDays,
   peakWindow,
-  promptTimes,
   sameDay,
   streakDays,
   useEntries,
@@ -60,11 +59,10 @@ function NowPage() {
       ? Math.round(((todayEpisodes - yesterday.episodes) / yesterday.episodes) * 100)
       : null;
   
-  const scheduleToday = promptTimes(settings, now);
-  const answered = today.filter((e) => e.prompted).length;
   const peak = useMemo(() => peakWindow(entries), [entries]);
   const streak = useMemo(() => streakDays(entries, now), [entries, now]);
   const maxDay = Math.max(1, ...week.map((d) => d.reports));
+  const answered = today.filter((e) => e.prompted).length;
 
   return (
     <AppShell>
@@ -182,27 +180,6 @@ function NowPage() {
             );
           })}
         </ul>
-      </section>
-
-      <section className="mx-5 mt-6">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-clay">
-          Prompt schedule
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {scheduleToday.map((t) => {
-            const past = t.getTime() < now.getTime();
-            return (
-              <span
-                key={t.toISOString()}
-                className={`rounded-full px-3 py-1.5 text-[12px] font-medium ${
-                  past ? "bg-sand/60 text-ink/45" : "border border-clay/30 text-ink/70"
-                }`}
-              >
-                {fmtTime(t)}
-              </span>
-            );
-          })}
-        </div>
       </section>
 
       <ReportSheet
