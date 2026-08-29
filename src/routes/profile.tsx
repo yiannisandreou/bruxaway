@@ -1,11 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
 import {
   behaviorById,
-  promptTimes,
-  fmtTime,
   streakDays,
   useEntries,
   useHydrated,
@@ -38,7 +36,6 @@ function ProfilePage() {
   const [confirming, setConfirming] = useState(false);
 
   const episodes = entries.filter((e) => behaviorById(e.behavior).episode).length;
-  const schedule = useMemo(() => promptTimes(settings), [settings]);
 
   const exportCsv = () => {
     const rows = [
@@ -141,15 +138,6 @@ function ProfilePage() {
             className="mt-1 w-full bg-transparent font-display text-[24px] leading-none text-brand outline-none"
           />
         </label>
-      </section>
-
-      <section className="mx-5 mt-4 rounded-2xl bg-sand/70 px-4 py-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-clay">
-          Today's prompts
-        </p>
-        <p className="mt-1 text-[13px] leading-snug text-ink/70">
-          {schedule.map((t) => fmtTime(t)).join(" · ")}
-        </p>
       </section>
 
       <section className="mx-5 mt-6 space-y-3">
