@@ -80,6 +80,7 @@ export type Database = {
           id: string
           prompts_per_day: number
           start_hour: number
+          timezone: string
           updated_at: string
         }
         Insert: {
@@ -90,6 +91,7 @@ export type Database = {
           id: string
           prompts_per_day?: number
           start_hour?: number
+          timezone?: string
           updated_at?: string
         }
         Update: {
@@ -100,6 +102,7 @@ export type Database = {
           id?: string
           prompts_per_day?: number
           start_hour?: number
+          timezone?: string
           updated_at?: string
         }
         Relationships: []
