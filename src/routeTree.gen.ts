@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CuesRouteImport } from './routes/cues'
 import { Route as TrendsRouteImport } from './routes/trends'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CuesRoute = CuesRouteImport.update({
+  id: '/cues',
+  path: '/cues',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrendsRoute = TrendsRouteImport.update({
@@ -25,27 +31,31 @@ const TrendsRoute = TrendsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cues': typeof CuesRoute
   '/trends': typeof TrendsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cues': typeof CuesRoute
   '/trends': typeof TrendsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/cues': typeof CuesRoute
   '/trends': typeof TrendsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/trends'
+  fullPaths: '/' | '/cues' | '/trends'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/trends'
-  id: '__root__' | '/' | '/trends'
+  to: '/' | '/cues' | '/trends'
+  id: '__root__' | '/' | '/cues' | '/trends'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CuesRoute: typeof CuesRoute
   TrendsRoute: typeof TrendsRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cues': {
+      id: '/cues'
+      path: '/cues'
+      fullPath: '/cues'
+      preLoaderRoute: typeof CuesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trends': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CuesRoute: CuesRoute,
   TrendsRoute: TrendsRoute,
 }
 export const routeTree = rootRouteImport
