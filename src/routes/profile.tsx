@@ -38,6 +38,29 @@ function ProfilePage() {
   const { settings, update } = useSettings();
   const { entries, clearAll } = useEntries();
   const [confirming, setConfirming] = useState(false);
+  const { user, role, loading: sessionLoading } = useSession();
+  const navigate = useNavigate();
+  const [syncState, setSyncState] = useState<string | null>(null);
+
+  const doSync = async () => {
+    setSyncState("Syncing…");
+    try {
+      const result = await syncNow();
+      setSyncState(
+        result.synced
+          ? `Synced · ${result.pushed} uploaded, ${result.pulled} pulled`
+          : "Sign in to sync",
+      );
+    } catch {
+      setSyncState("Sync failed — try again");
+    }
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  };
+
 
   const episodes = entries.filter((e) => behaviorById(e.behavior).episode).length;
 
