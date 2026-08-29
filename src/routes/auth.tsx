@@ -43,31 +43,25 @@ function AuthPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // When someone signs up intending to be a clinician, record a pending
-  // request so an existing clinician can approve them from the Clinic view.
-  const submitClinicianRequest = async (userId: string, user?: { email?: string | null; full_name?: string | null } | null) => {
-    await supabase
-      .from("role_requests")
-      .upsert(
-        {
-          user_id: userId,
-          email: (user?.email ?? email) || null,
-          full_name: (user?.full_name ?? name) || null,
-          status: "pending",
-        },
-        { onConflict: "user_id" },
-      )
-      .then(({ error }) => {
-        if (error && error.code !== "23505") {
-          // ignore duplicate-key; non-duplicate errors are non-fatal here
-        }
-      });
-  };
-
-  const afterAuth = async (userRole: AppRole, userId?: string, user?: { email?: string | null; full_name?: string | null } | null) => {
+  // When someone signs up intending to be a clinician, either make them the
+  // first physician (bootstrap, if none exist yet) or record a pending request
+  // for an existing clinician to approve.
+  const afterAuth = async (
+    userRole: AppRole,
+    userId?: string,
+    user?: { email?: string | null; full_name?: string | null } | null,
+  ) => {
     await syncNow().catch(() => undefined);
     if (intent === "physician" && userRole !== "physician") {
-      if (userId) await submitClinicianRequest(userId, user).catch(() => undefined);
+      const result = await requestOrBootstrapClinician({
+        data: { fullName: user?.full_name ?? name || undefined },
+      }).catch(() => null);
+      if (result?.ok && result.bootstrapped) {
+        // Force a session re-read so useSession picks up the new physician role.
+        await supabase.auth.refreshSession().catch(() => undefined);
+        navigate({ to: "/clinic", replace: true });
+        return;
+      }
       setMessage(
         "Your clinician request has been sent. Once a clinician approves it, the Clinic tab appears here automatically.",
       );
