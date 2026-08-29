@@ -59,8 +59,6 @@ function NowPage() {
       ? Math.round(((todayEpisodes - yesterday.episodes) / yesterday.episodes) * 100)
       : null;
   
-  const scheduleToday = promptTimes(settings, now);
-  const answered = today.filter((e) => e.prompted).length;
   const peak = useMemo(() => peakWindow(entries), [entries]);
   const streak = useMemo(() => streakDays(entries, now), [entries, now]);
   const maxDay = Math.max(1, ...week.map((d) => d.reports));
