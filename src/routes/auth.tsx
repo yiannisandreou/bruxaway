@@ -115,20 +115,12 @@ function AuthPage() {
         review them.
       </p>
 
-      <div className="mt-5 grid grid-cols-2 gap-2 rounded-2xl bg-sand/70 p-1">
-        {(["patient", "physician"] as const).map((r) => (
-          <button
-            key={r}
-            type="button"
-            onClick={() => setRole(r)}
-            className={`h-10 rounded-xl text-[13px] font-semibold ${
-              role === r ? "bg-cream text-brand shadow-sm" : "text-ink/50"
-            }`}
-          >
-            {r === "patient" ? "I track my jaw" : "I'm a clinician"}
-          </button>
-        ))}
-      </div>
+      <p className="mt-4 rounded-2xl bg-sand/70 px-4 py-3 text-[12px] leading-snug text-ink/55">
+        Clinician access is granted after verification — sign in here and your clinic will enable
+        it on your account.
+      </p>
+
+
 
       <form onSubmit={submit} className="mt-5 space-y-3">
         {mode === "signup" && (
