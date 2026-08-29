@@ -11,7 +11,13 @@ import {
   useEntries,
   useHydrated,
   useSettings,
+  syncSettingsToCloud,
 } from "@/lib/ema";
+import {
+  enableNotifications,
+  disableNotifications,
+  pushSupported,
+} from "@/lib/push";
 
 
 export const Route = createFileRoute("/profile")({
@@ -41,6 +47,27 @@ function ProfilePage() {
   const { user, role, loading: sessionLoading } = useSession();
   const navigate = useNavigate();
   const [syncState, setSyncState] = useState<string | null>(null);
+  const [notifMsg, setNotifMsg] = useState<string | null>(null);
+
+  const canPush = pushSupported();
+
+  const toggleNotifications = async () => {
+    if (settings.notifications) {
+      await disableNotifications();
+      update({ notifications: false });
+      setNotifMsg("Reminders off.");
+      return;
+    }
+    setNotifMsg("Enabling…");
+    const res = await enableNotifications();
+    if (res.ok) {
+      update({ notifications: true });
+      void syncSettingsToCloud();
+      setNotifMsg("On — random prompts will arrive during your waking hours.");
+    } else {
+      setNotifMsg(res.reason ?? "Couldn't enable reminders.");
+    }
+  };
 
   const doSync = async () => {
     setSyncState("Syncing…");
@@ -179,12 +206,49 @@ function ProfilePage() {
           min={3}
           max={12}
           value={settings.promptsPerDay}
-          onChange={(e) => update({ promptsPerDay: Number(e.target.value) })}
+          onChange={(e) => {
+            update({ promptsPerDay: Number(e.target.value) });
+            void syncSettingsToCloud();
+          }}
           className="mt-3 w-full accent-[var(--brand)]"
         />
         <p className="mt-1 text-[12px] text-ink/50">
           Classic EMA protocols use random prompts across the waking day.
         </p>
+      </section>
+
+      <section className="mx-5 mt-6 rounded-2xl bg-sand/60 px-4 py-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-clay">
+              Reminders
+            </p>
+            <p className="mt-1 text-[13px] leading-snug text-ink/65">
+              {!canPush
+                ? "Push reminders need a mobile browser that supports them — install Unclench to your home screen on iOS."
+                : user
+                  ? "Random check-in prompts pushed to this device during your waking hours."
+                  : "Sign in to receive random check-in prompts on this device."}
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={settings.notifications}
+            disabled={!hydrated || !canPush || !user}
+            onClick={toggleNotifications}
+            className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-40 ${
+              settings.notifications ? "bg-brand" : "bg-clay/30"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 size-6 rounded-full bg-cream transition-all ${
+                settings.notifications ? "left-[22px]" : "left-0.5"
+              }`}
+            />
+          </button>
+        </div>
+        {notifMsg && <p className="mt-2 text-[12px] text-ink/50">{notifMsg}</p>}
       </section>
 
       <section className="mx-5 mt-6 grid grid-cols-2 gap-3">
@@ -197,9 +261,10 @@ function ProfilePage() {
             min={0}
             max={23}
             value={settings.startHour}
-            onChange={(e) =>
-              update({ startHour: Math.min(23, Math.max(0, Number(e.target.value))) })
-            }
+            onChange={(e) => {
+              update({ startHour: Math.min(23, Math.max(0, Number(e.target.value))) });
+              void syncSettingsToCloud();
+            }}
             className="mt-1 w-full bg-transparent font-display text-[24px] leading-none text-brand outline-none"
           />
         </label>
@@ -212,9 +277,10 @@ function ProfilePage() {
             min={1}
             max={24}
             value={settings.endHour}
-            onChange={(e) =>
-              update({ endHour: Math.min(24, Math.max(1, Number(e.target.value))) })
-            }
+            onChange={(e) => {
+              update({ endHour: Math.min(24, Math.max(1, Number(e.target.value))) });
+              void syncSettingsToCloud();
+            }}
             className="mt-1 w-full bg-transparent font-display text-[24px] leading-none text-brand outline-none"
           />
         </label>

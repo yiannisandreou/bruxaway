@@ -1,0 +1,16 @@
+{
+  "name": "Unclench — Awake Bruxism Tracker",
+  "short_name": "Unclench",
+  "description": "Quick jaw check-ins through the day to track clenching, grinding and jaw bracing.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FBF6EE",
+  "theme_color": "#C25A2C",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-512.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

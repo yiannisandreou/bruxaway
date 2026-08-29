@@ -8,6 +8,27 @@
       "when": 1788034333789,
       "tag": "0000_clinician_patient_sharing",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788036499568,
+      "tag": "0001_push_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788036521482,
+      "tag": "0002_profile_timezone",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788036611666,
+      "tag": "0003_eligible_prompt_users_fn",
+      "breakpoints": true
     }
   ]
 }

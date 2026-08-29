@@ -75,23 +75,86 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          end_hour: number
           full_name: string | null
           id: string
+          prompts_per_day: number
+          start_hour: number
+          timezone: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           email?: string | null
+          end_hour?: number
           full_name?: string | null
           id: string
+          prompts_per_day?: number
+          start_hour?: number
+          timezone?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           email?: string | null
+          end_hour?: number
           full_name?: string | null
           id?: string
+          prompts_per_day?: number
+          start_hour?: number
+          timezone?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      prompt_events: {
+        Row: {
+          answered: boolean
+          fired_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          answered?: boolean
+          fired_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          answered?: boolean
+          fired_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -121,6 +184,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      eligible_prompt_users: {
+        Args: never
+        Returns: {
+          auth_key: string
+          end_hour: number
+          endpoint: string
+          fired_today: number
+          local_hour: number
+          p256dh: string
+          prompts_per_day: number
+          start_hour: number
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

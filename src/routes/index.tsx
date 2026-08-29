@@ -47,6 +47,18 @@ function NowPage() {
     return () => window.clearInterval(id);
   }, []);
 
+  // A push notification deep-links here with ?checkin=1 — open the prompted sheet.
+  useEffect(() => {
+    if (!hydrated) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkin")) {
+      setSheet({ prompted: true });
+      const url = new URL(window.location.href);
+      url.searchParams.delete("checkin");
+      window.history.replaceState({}, "", url.pathname);
+    }
+  }, [hydrated]);
+
   const today = useMemo(
     () => entries.filter((e) => sameDay(e.ts, now.getTime())),
     [entries, now],

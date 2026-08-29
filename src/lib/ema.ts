@@ -323,3 +323,33 @@ export function mergeLocalEntries(incoming: Entry[]) {
   broadcast();
   return fresh.length;
 }
+
+/* ── settings → cloud sync (the cron reads these to time prompts) ──────── */
+
+export function localTimezone(): string {
+  if (typeof window === "undefined") return "UTC";
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
+/** Writes the user's prompt frequency, waking window, and timezone to their
+ *  profile so the reminder cron can schedule random prompts server-side. */
+export async function syncSettingsToCloud(): Promise<void> {
+  if (typeof window === "undefined") return;
+  const { supabase } = await import("@/integrations/supabase/client");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  const s = read<Settings>(SETTINGS_KEY, DEFAULT_SETTINGS);
+  await supabase.from("profiles").upsert({
+    id: user.id,
+    prompts_per_day: s.promptsPerDay,
+    start_hour: s.startHour,
+    end_hour: s.endHour,
+    timezone: localTimezone(),
+  });
+}
