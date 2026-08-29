@@ -50,6 +50,13 @@
       "when": 1788040414946,
       "tag": "0006_allow_self_assign_any_role",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788040430192,
+      "tag": "0007_restore_care_link_patient_check",
+      "breakpoints": true
     }
   ]
 }
