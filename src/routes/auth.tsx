@@ -183,8 +183,9 @@ function AuthPage() {
         </div>
         {intent === "physician" && (
           <p className="mt-2 rounded-2xl bg-sand/70 px-4 py-3 text-[12px] leading-snug text-ink/55">
-            Clinician access is enabled by your clinic after verification. Sign in here and the
-            Clinic tab appears once it's approved.
+            Clinician access needs approval. After you create your account, your request is sent to
+            an existing clinician, who approves it from the Clinic view. The Clinic tab appears here
+            once approved.
           </p>
         )}
       </div>
