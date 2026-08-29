@@ -45,9 +45,18 @@ async function promptHandler({ request }: { request: Request }) {
   if (error) return new Response("query error", { status: 500 });
 
   const rows = (data ?? []) as EligibleRow[];
+  const devices = await supabaseAdmin.rpc("eligible_prompt_devices");
+  const deviceRows = (devices.data ?? []) as (Omit<EligibleRow, "user_id"> & {
+    device_id: string;
+  })[];
   let fired = 0;
 
-  for (const row of rows) {
+  const targets: (EligibleRow & { device_id?: string })[] = [
+    ...rows,
+    ...deviceRows.map((d) => ({ ...d, user_id: "" })),
+  ];
+
+  for (const row of targets) {
     const remaining = Math.max(0, row.prompts_per_day - row.fired_today);
     // ~6 ten-minute slots per hour still ahead in today's waking window.
     const slotsLeft = Math.max(1, (row.end_hour - row.local_hour) * 6);
@@ -55,9 +64,11 @@ async function promptHandler({ request }: { request: Request }) {
     if (Math.random() >= probability) continue;
 
     // Record the fired prompt (counts toward today's cap for subsequent ticks).
-    const { error: insErr } = await supabaseAdmin
-      .from("prompt_events")
-      .insert({ user_id: row.user_id, fired_at: new Date().toISOString() });
+    const { error: insErr } = await supabaseAdmin.from("prompt_events").insert({
+      user_id: row.device_id ? null : row.user_id,
+      device_id: row.device_id ?? null,
+      fired_at: new Date().toISOString(),
+    });
     if (insErr) continue;
 
     try {
@@ -68,8 +79,9 @@ async function promptHandler({ request }: { request: Request }) {
     fired++;
   }
 
-  return Response.json({ fired, eligible: rows.length });
+  return Response.json({ fired, eligible: targets.length });
 }
+
 
 async function sendPush(row: EligibleRow, privateKey: string, origin: string) {
   const { buildPushHTTPRequest } = await import("@pushforge/builder");

@@ -1,5 +1,42 @@
 import { VAPID_PUBLIC_KEY } from "@/lib/vapid";
-import { savePushSubscription, removePushSubscription } from "@/lib/push.functions";
+import { deviceId, localTimezone, readSettings } from "@/lib/ema";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  savePushSubscription,
+  removePushSubscription,
+  saveDevicePushSubscription,
+  removeDevicePushSubscription,
+} from "@/lib/push.functions";
+
+async function signedIn(): Promise<boolean> {
+  const { data } = await supabase.auth.getSession();
+  return Boolean(data.session);
+}
+
+function devicePayload(sub: PushSubscription) {
+  const keys = sub.toJSON().keys ?? {};
+  const s = readSettings();
+  return {
+    device_id: deviceId(),
+    endpoint: sub.endpoint,
+    p256dh: keys["p256dh"] ?? "",
+    auth_key: keys["auth"] ?? "",
+    prompts_per_day: s.promptsPerDay,
+    start_hour: s.startHour,
+    end_hour: s.endHour,
+    timezone: localTimezone(),
+  };
+}
+
+/** Pushes changed prompt settings to this device's account-free subscription. */
+export async function syncDeviceSubscriptionSettings(): Promise<void> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  const reg = await navigator.serviceWorker.getRegistration();
+  const sub = await reg?.pushManager.getSubscription();
+  if (!sub) return;
+  await saveDevicePushSubscription({ data: devicePayload(sub) });
+}
+
 
 /** Registers the service worker that handles incoming push events. */
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
@@ -23,8 +60,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 /**
  * Requests notification permission, subscribes this device to push, and stores
  * the subscription server-side so the cron can deliver random check-in prompts.
- * Returns true on success. Requires a signed-in account (subscription is saved
- * to the user's row).
+ * No account required: signed-out devices are stored against a local device id.
  */
 export async function enableNotifications(): Promise<{ ok: boolean; reason?: string }> {
   if (typeof navigator === "undefined" || !("PushManager" in window)) {
@@ -44,20 +80,23 @@ export async function enableNotifications(): Promise<{ ok: boolean; reason?: str
     });
   }
 
-  const json = sub.toJSON();
-  const keys = json.keys ?? {};
+  const keys = sub.toJSON().keys ?? {};
   try {
-    await savePushSubscription({
-      data: {
-        endpoint: sub.endpoint,
-        p256dh: keys["p256dh"] ?? "",
-        auth_key: keys["auth"] ?? "",
-      },
-    });
+    if (await signedIn()) {
+      await savePushSubscription({
+        data: {
+          endpoint: sub.endpoint,
+          p256dh: keys["p256dh"] ?? "",
+          auth_key: keys["auth"] ?? "",
+        },
+      });
+    } else {
+      await saveDevicePushSubscription({ data: devicePayload(sub) });
+    }
   } catch {
-    // If saving fails (e.g. not signed in), unsubscribe locally so state stays honest.
+    // Keep local state honest if the subscription couldn't be stored.
     await sub.unsubscribe();
-    return { ok: false, reason: "Sign in to enable reminders." };
+    return { ok: false, reason: "Couldn't save reminders. Check your connection and try again." };
   }
   return { ok: true };
 }
@@ -70,17 +109,18 @@ export async function disableNotifications(): Promise<void> {
     if (!reg) return;
     const sub = await reg.pushManager.getSubscription();
     if (sub) {
-      try {
-        await removePushSubscription({ data: { endpoint: sub.endpoint } });
-      } catch {
-        // ignore — still unsubscribe locally
-      }
+      // Remove from both stores — the device may have signed in since enabling.
+      await removeDevicePushSubscription({
+        data: { device_id: deviceId(), endpoint: sub.endpoint },
+      }).catch(() => undefined);
+      await removePushSubscription({ data: { endpoint: sub.endpoint } }).catch(() => undefined);
       await sub.unsubscribe();
     }
   } catch {
     // ignore
   }
 }
+
 
 /** True when this browser can actually do push + service workers. */
 export function pushSupported(): boolean {
@@ -90,4 +130,30 @@ export function pushSupported(): boolean {
     "PushManager" in window &&
     "Notification" in window
   );
+}
+
+/**
+ * After signing in, moves this device's account-free subscription onto the
+ * account so prompts follow the user's profile settings instead.
+ */
+export async function migrateDeviceSubscriptionToAccount(): Promise<void> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = await reg?.pushManager.getSubscription();
+    if (!sub) return;
+    const keys = sub.toJSON().keys ?? {};
+    await savePushSubscription({
+      data: {
+        endpoint: sub.endpoint,
+        p256dh: keys["p256dh"] ?? "",
+        auth_key: keys["auth"] ?? "",
+      },
+    });
+    await removeDevicePushSubscription({
+      data: { device_id: deviceId(), endpoint: sub.endpoint },
+    });
+  } catch {
+    // ignore — reminders keep working from whichever row still exists
+  }
 }

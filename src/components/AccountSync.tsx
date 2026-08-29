@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 
 import { ensureAccount, useSession } from "@/lib/session";
+import { migrateDeviceSubscriptionToAccount } from "@/lib/push";
 import { syncNow } from "@/lib/sync";
+
 
 const PENDING_ROLE_KEY = "unclench.pendingRole";
 
@@ -21,6 +23,7 @@ export function AccountSync() {
       // accounts are provisioned server-side after verification.
       await ensureAccount(user, "patient").catch(() => undefined);
       window.localStorage.removeItem(PENDING_ROLE_KEY);
+      await migrateDeviceSubscriptionToAccount().catch(() => undefined);
       await syncNow().catch(() => undefined);
     })();
   }, [loading, user]);

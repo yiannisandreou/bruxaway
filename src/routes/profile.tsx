@@ -228,15 +228,16 @@ function ProfilePage() {
                 ? "Push reminders need a mobile browser that supports them — install Unclench to your home screen on iOS."
                 : user
                   ? "Random check-in prompts pushed to this device during your waking hours."
-                  : "Sign in to receive random check-in prompts on this device."}
+                  : "Random check-in prompts pushed to this device — no account needed."}
             </p>
           </div>
           <button
             type="button"
             role="switch"
             aria-checked={settings.notifications}
-            disabled={!hydrated || !canPush || !user}
+            disabled={!hydrated || !canPush}
             onClick={toggleNotifications}
+
             className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-40 ${
               settings.notifications ? "bg-brand" : "bg-clay/30"
             }`}
