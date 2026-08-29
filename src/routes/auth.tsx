@@ -115,44 +115,10 @@ function AuthPage() {
         review them.
       </p>
 
-      <div className="mt-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/45">
-          I am a…
-        </p>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          {(
-            [
-              { value: "patient", label: "Patient", hint: "Track my own jaw" },
-              { value: "physician", label: "Doctor", hint: "Follow my patients" },
-            ] as const
-          ).map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setRole(opt.value)}
-              className={`rounded-2xl border px-3 py-3 text-left transition-colors ${
-                role === opt.value
-                  ? "border-brand bg-brand/10"
-                  : "border-clay/30 bg-sand/40"
-              }`}
-            >
-              <p
-                className={`text-[14px] font-semibold ${
-                  role === opt.value ? "text-brand" : "text-ink"
-                }`}
-              >
-                {opt.label}
-              </p>
-              <p className="mt-0.5 text-[11px] text-ink/50">{opt.hint}</p>
-            </button>
-          ))}
-        </div>
-        {mode === "signup" && role === "physician" && (
-          <p className="mt-2 text-[11px] leading-snug text-ink/50">
-            Doctor accounts see their linked patients' check-ins in the Clinic tab.
-          </p>
-        )}
-      </div>
+      <p className="mt-4 rounded-2xl bg-sand/70 px-4 py-3 text-[12px] leading-snug text-ink/55">
+        Are you a clinician? Sign in here and your clinic will enable doctor access on your
+        account after verification.
+      </p>
 
 
 
