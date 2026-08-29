@@ -8,7 +8,6 @@ import {
   fmtTime,
   lastNDays,
   peakWindow,
-  promptTimes,
   sameDay,
   streakDays,
   useEntries,
