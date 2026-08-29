@@ -48,6 +48,28 @@ function ProfilePage() {
   const navigate = useNavigate();
   const [syncState, setSyncState] = useState<string | null>(null);
   const [notifMsg, setNotifMsg] = useState<string | null>(null);
+  const [clinicianRequest, setClinicianRequest] = useState<
+    "pending" | "approved" | "rejected" | null
+  >(null);
+
+  useEffect(() => {
+    if (!user || role === "physician") {
+      setClinicianRequest(null);
+      return;
+    }
+    let alive = true;
+    void supabase
+      .from("role_requests")
+      .select("status")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (alive) setClinicianRequest((data?.status as typeof clinicianRequest) ?? null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [user, role]);
 
   const canPush = pushSupported();
 
@@ -143,6 +165,18 @@ function ProfilePage() {
                 ? "Clinician account — you can review assigned patients' records."
                 : "Patient account — your check-ins back up to the cloud so your clinician can review them."}
             </p>
+            {role !== "physician" && clinicianRequest === "pending" && (
+              <p className="mt-2 rounded-xl bg-cream px-3 py-2 text-[12px] leading-snug text-ink/60">
+                Clinician access pending approval. Once an existing clinician approves your
+                request, the Clinic tab appears automatically.
+              </p>
+            )}
+            {role !== "physician" && clinicianRequest === "rejected" && (
+              <p className="mt-2 rounded-xl bg-cream px-3 py-2 text-[12px] leading-snug text-ink/60">
+                Your clinician access request wasn't approved. Contact your clinic if you think
+                this is a mistake.
+              </p>
+            )}
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 onClick={doSync}
