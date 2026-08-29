@@ -22,8 +22,8 @@ const fail = (error: string): RequestResult => ({ ok: false, error });
  */
 export const requestOrBootstrapClinician = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { fullName?: string }) => ({
-    fullName: input?.fullName ? String(input.fullName) : undefined,
+  .inputValidator((input: { fullName?: string | undefined }) => ({
+    fullName: input?.fullName,
   }))
   .handler(async ({ data, context }): Promise<ClinicianSignupResult> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
