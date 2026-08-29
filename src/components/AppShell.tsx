@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { greeting, useSettings } from "@/lib/ema";
+import { useSession } from "@/lib/session";
 
 const TABS = [
   { to: "/", label: "Now" },
@@ -9,6 +10,9 @@ const TABS = [
   { to: "/cues", label: "Cues" },
   { to: "/profile", label: "Profile" },
 ] as const;
+
+const CLINIC_TAB = { to: "/clinic", label: "Clinic" } as const;
+
 
 export function AppShell({
   title,
