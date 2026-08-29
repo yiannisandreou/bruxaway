@@ -80,6 +80,7 @@ function AuthPage() {
       const result = await requestOrBootstrapClinician({
         data: { fullName: (user?.full_name ?? name) || undefined },
       }).catch(() => null);
+      if (result?.ok) window.localStorage.removeItem(CLINICIAN_INTENT_KEY);
       if (result?.ok && result.bootstrapped) {
         // Force a session re-read so useSession picks up the new physician role.
         await supabase.auth.refreshSession().catch(() => undefined);
@@ -93,6 +94,7 @@ function AuthPage() {
     }
     navigate({ to: userRole === "physician" ? "/clinic" : "/", replace: true });
   };
+
 
 
   const submit = async (e: React.FormEvent) => {
