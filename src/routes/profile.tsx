@@ -242,7 +242,7 @@ function ProfilePage() {
       </section>
 
       <p className="mx-5 mt-6 text-[12px] leading-snug text-ink/45">
-        Unclench stores every report on this device only. It supports self-monitoring of awake
+        Reports are stored on this device and, when you're signed in, backed up to your account so an assigned clinician can review them. Unclench supports self-monitoring of awake
         bruxism and is not a diagnosis — share your export with your dentist or specialist.
       </p>
     </AppShell>
