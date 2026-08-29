@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { ensureAccount, type AppRole } from "@/lib/session";
+import { requestOrBootstrapClinician } from "@/lib/clinician.functions";
 import { syncNow } from "@/lib/sync";
 
 export const PENDING_ROLE_KEY = "unclench.pendingRole";
