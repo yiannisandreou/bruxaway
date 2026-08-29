@@ -142,10 +142,10 @@ function ClinicPage() {
   if (!loading && role !== "physician") {
     return (
       <div className="mx-auto min-h-screen w-full max-w-[430px] bg-cream px-5 pt-10 text-ink">
-        <h1 className="font-display text-[24px] font-medium">Clinician access only</h1>
+        <h1 className="font-display text-[24px] font-medium">Clinician access pending</h1>
         <p className="mt-2 text-[13px] text-ink/55">
-          This account is registered as a patient. Ask your clinic to sign in with their clinician
-          account.
+          This account is registered as a patient. If you requested clinician access, an existing
+          clinician still needs to approve it — the Clinic tab appears here once it's approved.
         </p>
         <Link to="/" className="mt-6 block text-[13px] font-semibold text-brand">
           Back to my check-ins
