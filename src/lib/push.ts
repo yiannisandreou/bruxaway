@@ -131,3 +131,29 @@ export function pushSupported(): boolean {
     "Notification" in window
   );
 }
+
+/**
+ * After signing in, moves this device's account-free subscription onto the
+ * account so prompts follow the user's profile settings instead.
+ */
+export async function migrateDeviceSubscriptionToAccount(): Promise<void> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = await reg?.pushManager.getSubscription();
+    if (!sub) return;
+    const keys = sub.toJSON().keys ?? {};
+    await savePushSubscription({
+      data: {
+        endpoint: sub.endpoint,
+        p256dh: keys["p256dh"] ?? "",
+        auth_key: keys["auth"] ?? "",
+      },
+    });
+    await removeDevicePushSubscription({
+      data: { device_id: deviceId(), endpoint: sub.endpoint },
+    });
+  } catch {
+    // ignore — reminders keep working from whichever row still exists
+  }
+}
