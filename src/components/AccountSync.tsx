@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 
 import { ensureAccount, useSession } from "@/lib/session";
+import { migrateDeviceSubscriptionToAccount } from "@/lib/push";
 import { syncNow } from "@/lib/sync";
+
 
 const PENDING_ROLE_KEY = "unclench.pendingRole";
 
