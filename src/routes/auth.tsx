@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { ensureAccount, type AppRole } from "@/lib/session";
 import { requestOrBootstrapClinician } from "@/lib/clinician.functions";
+import { CLINICIAN_INTENT_KEY } from "@/components/AccountSync";
 import { syncNow } from "@/lib/sync";
 
 export const PENDING_ROLE_KEY = "unclench.pendingRole";
@@ -198,6 +199,9 @@ function AuthPage() {
               type="button"
               onClick={() => {
                 setIntent(option);
+                if (option === "physician")
+                  window.localStorage.setItem(CLINICIAN_INTENT_KEY, "1");
+                else window.localStorage.removeItem(CLINICIAN_INTENT_KEY);
                 setMessage(null);
               }}
               className={`h-11 rounded-2xl border text-[14px] font-semibold transition ${
