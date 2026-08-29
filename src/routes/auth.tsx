@@ -30,8 +30,10 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
-  // Sign-up can only claim the patient role. Clinician accounts are granted
-  // by a verified, server-side process — never self-selected.
+  // What the person says they are. Self-service accounts can only ever *claim*
+  // the patient role — clinician access is granted server-side after
+  // verification, so picking "Clinician" only changes where we send them.
+  const [intent, setIntent] = useState<AppRole>("patient");
   const role: AppRole = "patient";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,8 +44,15 @@ function AuthPage() {
 
   const afterAuth = async (userRole: AppRole) => {
     await syncNow().catch(() => undefined);
+    if (intent === "physician" && userRole !== "physician") {
+      setMessage(
+        "You're signed in, but clinician access isn't enabled on this account yet. Your clinic will enable it after verification.",
+      );
+      return;
+    }
     navigate({ to: userRole === "physician" ? "/clinic" : "/", replace: true });
   };
+
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
