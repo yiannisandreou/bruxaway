@@ -19,9 +19,9 @@ export function AccountSync() {
     if (loading || !user || done.current === user.id) return;
     done.current = user.id;
     void (async () => {
-      // Self-service sign-up can only ever claim the patient role; clinician
-      // accounts are provisioned server-side after verification.
-      await ensureAccount(user, "patient").catch(() => undefined);
+      const pending = window.localStorage.getItem(PENDING_ROLE_KEY);
+      const role = pending === "physician" ? "physician" : "patient";
+      await ensureAccount(user, role).catch(() => undefined);
       window.localStorage.removeItem(PENDING_ROLE_KEY);
       await migrateDeviceSubscriptionToAccount().catch(() => undefined);
       await syncNow().catch(() => undefined);
