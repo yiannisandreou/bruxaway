@@ -90,8 +90,10 @@ async function promptHandler({ request }: { request: Request }) {
         .from("push_delivery_failures")
         .insert({ endpoint: row.endpoint, status, detail: "cron send" })
         .then(() => undefined, () => undefined);
-      if (status === 404 || status === 410) {
-        // Subscription is dead (app reinstalled / permission revoked) — prune it.
+      if (status === 400 || status === 404 || status === 410) {
+        // Subscription is dead or undeliverable (app reinstalled, permission
+        // revoked, or created with an outdated VAPID key) — prune it so cron
+        // stops hammering an endpoint that can never succeed.
         await supabaseAdmin
           .from("push_delivery_failures")
           .insert({ endpoint: row.endpoint, status, detail: "pruned expired subscription" });
