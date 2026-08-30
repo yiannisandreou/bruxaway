@@ -122,34 +122,3 @@ async function promptHandler({ request }: { request: Request }) {
 }
 
 
-async function sendPush(
-  row: EligibleRow,
-  privateKey: string,
-  origin: string,
-): Promise<number> {
-  const { buildPushHTTPRequest } = await import("@pushforge/builder");
-  const req = await buildPushHTTPRequest({
-    privateJWK: privateKey,
-    subscription: {
-      endpoint: row.endpoint,
-      keys: { p256dh: row.p256dh, auth: row.auth_key },
-    },
-    message: {
-      payload: {
-        title: "Jaw check-in",
-        body: "What's your jaw doing right now?",
-        url: `${origin}/?checkin=1`,
-        icon: `${origin}/icon-512.png`,
-      },
-      adminContact: "mailto:hello@unclench.app",
-      options: { ttl: 3600, urgency: "normal", topic: "unclench-prompt" },
-    },
-  });
-  const res = await fetch(req.endpoint, {
-    method: "POST",
-    headers: req.headers as Record<string, string>,
-    body: req.body,
-  });
-  return res.status;
-}
-
