@@ -71,6 +71,13 @@
       "when": 1788042102352,
       "tag": "0009_create_role_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788079766749,
+      "tag": "0010_schedule_prompt_cron",
+      "breakpoints": true
     }
   ]
 }
