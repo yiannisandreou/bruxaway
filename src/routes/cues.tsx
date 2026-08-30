@@ -11,12 +11,12 @@ export const Route = createFileRoute("/cues")({
       {
         name: "description",
         content:
-          "Find the situations that trigger your awake bruxism and run a guided 60-second jaw reset to release clenching.",
+          "Find the situations that trigger your awake bruxism and run a guided 30-second jaw reset to release clenching.",
       },
       { property: "og:title", content: "Cues & Jaw Reset — Unclench" },
       {
         property: "og:description",
-        content: "Your top clenching triggers plus a guided 60-second jaw relaxation sequence.",
+        content: "Your top clenching triggers plus a guided 30-second jaw relaxation sequence.",
       },
     ],
   }),
@@ -24,10 +24,10 @@ export const Route = createFileRoute("/cues")({
 });
 
 const RESET_STEPS = [
-  { label: "Notice", detail: "Where are your teeth right now? Let them part slightly.", secs: 15 },
-  { label: "Release", detail: "Tongue rests behind the upper teeth, lips together, jaw heavy.", secs: 15 },
-  { label: "Breathe", detail: "Inhale through the nose for 4, out slowly for 6.", secs: 20 },
-  { label: "Soften", detail: "Drop the shoulders, unfurrow the brow, keep the jaw loose.", secs: 10 },
+  { label: "Notice", detail: "Where are your teeth right now? Let them part slightly.", secs: 8 },
+  { label: "Release", detail: "Tongue rests behind the upper teeth, lips together, jaw heavy.", secs: 8 },
+  { label: "Breathe", detail: "Inhale through the nose for 4, out slowly for 6.", secs: 10 },
+  { label: "Soften", detail: "Drop the shoulders, unfurrow the brow, keep the jaw loose.", secs: 4 },
 ];
 
 function CuesPage() {
@@ -76,7 +76,7 @@ function CuesPage() {
     <AppShell title="Cues & resets" eyebrow="Cues · what sets the jaw off">
       <section className="mx-5 rounded-3xl bg-brand px-5 pt-4 pb-5 text-cream shadow-brand">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber">
-          60-second jaw reset
+          30-second jaw reset
         </p>
         <p className="mt-2 font-display text-[26px] leading-tight">
           {running || elapsed > 0
