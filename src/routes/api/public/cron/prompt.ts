@@ -83,6 +83,12 @@ async function promptHandler({ request }: { request: Request }) {
 
     try {
       const status = await sendPush(row, privateKey, origin);
+      // Log every send (not just failures) so delivery problems can be told
+      // apart from the phone holding notifications back.
+      await supabaseAdmin
+        .from("push_delivery_failures")
+        .insert({ endpoint: row.endpoint, status, detail: "cron send" })
+        .then(() => undefined, () => undefined);
       if (status === 404 || status === 410) {
         // Subscription is dead (app reinstalled / permission revoked) — prune it.
         await supabaseAdmin
