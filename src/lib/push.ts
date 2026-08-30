@@ -176,6 +176,12 @@ export async function sendTestReminder(): Promise<{ ok: boolean; reason?: string
     // A rejected send means the subscription or its server-side row is stale —
     // drop it and resubscribe once, then retry.
     if (res.reason === "Turn reminders on first.") return res;
+    await Promise.all([
+      removeDevicePushSubscription({
+        data: { device_id: deviceId(), endpoint: sub.endpoint },
+      }).catch(() => undefined),
+      removePushSubscription({ data: { endpoint: sub.endpoint } }).catch(() => undefined),
+    ]);
     await sub.unsubscribe().catch(() => undefined);
   }
 

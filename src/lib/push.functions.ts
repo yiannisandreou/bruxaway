@@ -18,6 +18,12 @@ export const savePushSubscription = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("push_subscriptions")
+      .delete()
+      .eq("user_id", context.userId)
+      .neq("endpoint", data.endpoint);
+    if (error) throw error;
+    const { error: upsertError } = await context.supabase
+      .from("push_subscriptions")
       .upsert(
         {
           user_id: context.userId,
@@ -27,7 +33,7 @@ export const savePushSubscription = createServerFn({ method: "POST" })
         },
         { onConflict: "user_id,endpoint" },
       );
-    if (error) throw error;
+    if (upsertError) throw upsertError;
     return { ok: true };
   });
 
@@ -46,26 +52,34 @@ export const removePushSubscription = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-const deviceInput = z.object({
-  device_id: z.string().uuid(),
-  endpoint: z.string().url().startsWith("https://"),
-  p256dh: z.string().min(1).max(200),
-  auth_key: z.string().min(1).max(200),
-  prompts_per_day: z.number().int().min(1).max(24),
-  start_hour: z.number().int().min(0).max(23),
-  end_hour: z.number().int().min(1).max(24),
-  timezone: z.string().min(1).max(64),
-});
-
 /**
  * Stores a push subscription for a device that has no account. Deliberately
  * unauthenticated: reminders must work without signing in. Writes go through
  * trusted server code only — the table has no client-reachable grants.
  */
 export const saveDevicePushSubscription = createServerFn({ method: "POST" })
-  .inputValidator((input) => deviceInput.parse(input))
+  .inputValidator((input) =>
+    z
+      .object({
+        device_id: z.string().uuid(),
+        endpoint: z.string().url().startsWith("https://"),
+        p256dh: z.string().min(1).max(200),
+        auth_key: z.string().min(1).max(200),
+        prompts_per_day: z.number().int().min(1).max(24),
+        start_hour: z.number().int().min(0).max(23),
+        end_hour: z.number().int().min(1).max(24),
+        timezone: z.string().min(1).max(64),
+      })
+      .parse(input),
+  )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: deleteError } = await supabaseAdmin
+      .from("device_push_subscriptions")
+      .delete()
+      .eq("device_id", data.device_id)
+      .neq("endpoint", data.endpoint);
+    if (deleteError) throw deleteError;
     const { error } = await supabaseAdmin
       .from("device_push_subscriptions")
       .upsert({ ...data, updated_at: new Date().toISOString() }, { onConflict: "device_id,endpoint" });
