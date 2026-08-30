@@ -19,6 +19,15 @@ export async function sendPush(
 ): Promise<PushDeliveryResult> {
   const { sendPushNotification } = await import("web-push-browser");
   const privateJwk = JSON.parse(privateKey) as JsonWebKey;
+  if (
+    privateJwk.kty !== "EC" ||
+    privateJwk.crv !== "P-256" ||
+    !privateJwk.x ||
+    !privateJwk.y ||
+    !privateJwk.d
+  ) {
+    throw new Error("VAPID private key is invalid");
+  }
   const publicJwk: JsonWebKey = {
     kty: privateJwk.kty,
     crv: privateJwk.crv,
