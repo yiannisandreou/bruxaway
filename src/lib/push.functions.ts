@@ -82,9 +82,9 @@ export const saveDevicePushSubscription = createServerFn({ method: "POST" })
     const { error: deleteError } = await supabaseAdmin
       .from("device_push_subscriptions")
       .delete()
-      .eq("device_id", data.device_id)
-      .neq("endpoint", data.endpoint);
+      .or(`and(device_id.eq.${data.device_id},endpoint.neq.${data.endpoint}),and(device_id.neq.${data.device_id},endpoint.eq.${data.endpoint})`);
     if (deleteError) throw deleteError;
+
     const { error } = await supabaseAdmin
       .from("device_push_subscriptions")
       .upsert({ ...data, updated_at: new Date().toISOString() }, { onConflict: "device_id,endpoint" });
