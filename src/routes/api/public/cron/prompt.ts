@@ -107,11 +107,6 @@ async function promptHandler({ request }: { request: Request }) {
         }
         continue;
       }
-      if (status >= 400) {
-        await supabaseAdmin
-          .from("push_delivery_failures")
-          .insert({ endpoint: row.endpoint, status, detail: "delivery rejected" });
-      }
     } catch (err) {
       // delivery failure shouldn't abort the loop; the prompt is already recorded
       await supabaseAdmin
