@@ -56,10 +56,20 @@ async function promptHandler({ request }: { request: Request }) {
     ...deviceRows.map((d) => ({ ...d, user_id: "" })),
   ];
 
+  // Minutes already elapsed in the current hour — used to make the remaining
+  // slot count minute-accurate so prompts spread evenly instead of bunching
+  // near the end of the waking window.
+  const minuteOfHour = new Date().getUTCMinutes();
+
   for (const row of targets) {
     const remaining = Math.max(0, row.prompts_per_day - row.fired_today);
-    // ~6 ten-minute slots per hour still ahead in today's waking window.
-    const slotsLeft = Math.max(1, (row.end_hour - row.local_hour) * 6);
+    if (remaining === 0) continue;
+    // Ten-minute ticks still ahead in today's waking window.
+    const minutesLeft = Math.max(
+      10,
+      (row.end_hour - row.local_hour) * 60 - minuteOfHour,
+    );
+    const slotsLeft = Math.max(1, Math.round(minutesLeft / 10));
     const probability = remaining / slotsLeft;
     if (Math.random() >= probability) continue;
 
@@ -72,9 +82,36 @@ async function promptHandler({ request }: { request: Request }) {
     if (insErr) continue;
 
     try {
-      await sendPush(row, privateKey, origin);
-    } catch {
+      const status = await sendPush(row, privateKey, origin);
+      if (status === 404 || status === 410) {
+        // Subscription is dead (app reinstalled / permission revoked) — prune it.
+        await supabaseAdmin
+          .from("push_delivery_failures")
+          .insert({ endpoint: row.endpoint, status, detail: "pruned expired subscription" });
+        if (row.device_id) {
+          await supabaseAdmin
+            .from("device_push_subscriptions")
+            .delete()
+            .eq("endpoint", row.endpoint);
+        } else {
+          await supabaseAdmin
+            .from("push_subscriptions")
+            .delete()
+            .eq("endpoint", row.endpoint);
+        }
+        continue;
+      }
+      if (status >= 400) {
+        await supabaseAdmin
+          .from("push_delivery_failures")
+          .insert({ endpoint: row.endpoint, status, detail: "delivery rejected" });
+      }
+    } catch (err) {
       // delivery failure shouldn't abort the loop; the prompt is already recorded
+      await supabaseAdmin
+        .from("push_delivery_failures")
+        .insert({ endpoint: row.endpoint, detail: String(err).slice(0, 300) })
+        .then(() => undefined, () => undefined);
     }
     fired++;
   }
@@ -83,7 +120,11 @@ async function promptHandler({ request }: { request: Request }) {
 }
 
 
-async function sendPush(row: EligibleRow, privateKey: string, origin: string) {
+async function sendPush(
+  row: EligibleRow,
+  privateKey: string,
+  origin: string,
+): Promise<number> {
   const { buildPushHTTPRequest } = await import("@pushforge/builder");
   const req = await buildPushHTTPRequest({
     privateJWK: privateKey,
@@ -102,9 +143,11 @@ async function sendPush(row: EligibleRow, privateKey: string, origin: string) {
       options: { ttl: 3600, urgency: "normal", topic: "unclench-prompt" },
     },
   });
-  await fetch(req.endpoint, {
+  const res = await fetch(req.endpoint, {
     method: "POST",
     headers: req.headers as Record<string, string>,
     body: req.body,
   });
+  return res.status;
 }
+

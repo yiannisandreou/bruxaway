@@ -35,6 +35,24 @@ export type Database = {
         }
         Relationships: []
       }
+      cron_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       device_push_subscriptions: {
         Row: {
           auth_key: string
@@ -170,6 +188,30 @@ export type Database = {
           fired_at?: string
           id?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      push_delivery_failures: {
+        Row: {
+          detail: string | null
+          endpoint: string
+          id: string
+          occurred_at: string
+          status: number | null
+        }
+        Insert: {
+          detail?: string | null
+          endpoint: string
+          id?: string
+          occurred_at?: string
+          status?: number | null
+        }
+        Update: {
+          detail?: string | null
+          endpoint?: string
+          id?: string
+          occurred_at?: string
+          status?: number | null
         }
         Relationships: []
       }
