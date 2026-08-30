@@ -27,8 +27,11 @@ self.addEventListener("push", (event) => {
       { action: "log", title: "Log now" },
       { action: "later", title: "Later" },
     ],
-    tag: "unclench-prompt",
+    // Unique tag per notification so a new reminder never silently replaces a
+    // pending one.
+    tag: `unclench-prompt-${Date.now()}`,
     renotify: true,
+    requireInteraction: false,
     vibrate: [60, 40, 60],
   };
   event.waitUntil(self.registration.showNotification(title, options));

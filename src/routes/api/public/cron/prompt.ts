@@ -82,7 +82,14 @@ async function promptHandler({ request }: { request: Request }) {
     if (insErr) continue;
 
     try {
+      const { sendPush } = await import("@/lib/send-push.server");
       const status = await sendPush(row, privateKey, origin);
+      // Log every send (not just failures) so delivery problems can be told
+      // apart from the phone holding notifications back.
+      await supabaseAdmin
+        .from("push_delivery_failures")
+        .insert({ endpoint: row.endpoint, status, detail: "cron send" })
+        .then(() => undefined, () => undefined);
       if (status === 404 || status === 410) {
         // Subscription is dead (app reinstalled / permission revoked) — prune it.
         await supabaseAdmin
@@ -101,11 +108,6 @@ async function promptHandler({ request }: { request: Request }) {
         }
         continue;
       }
-      if (status >= 400) {
-        await supabaseAdmin
-          .from("push_delivery_failures")
-          .insert({ endpoint: row.endpoint, status, detail: "delivery rejected" });
-      }
     } catch (err) {
       // delivery failure shouldn't abort the loop; the prompt is already recorded
       await supabaseAdmin
@@ -119,35 +121,4 @@ async function promptHandler({ request }: { request: Request }) {
   return Response.json({ fired, eligible: targets.length });
 }
 
-
-async function sendPush(
-  row: EligibleRow,
-  privateKey: string,
-  origin: string,
-): Promise<number> {
-  const { buildPushHTTPRequest } = await import("@pushforge/builder");
-  const req = await buildPushHTTPRequest({
-    privateJWK: privateKey,
-    subscription: {
-      endpoint: row.endpoint,
-      keys: { p256dh: row.p256dh, auth: row.auth_key },
-    },
-    message: {
-      payload: {
-        title: "Jaw check-in",
-        body: "What's your jaw doing right now?",
-        url: `${origin}/?checkin=1`,
-        icon: `${origin}/icon-512.png`,
-      },
-      adminContact: "mailto:hello@unclench.app",
-      options: { ttl: 3600, urgency: "normal", topic: "unclench-prompt" },
-    },
-  });
-  const res = await fetch(req.endpoint, {
-    method: "POST",
-    headers: req.headers as Record<string, string>,
-    body: req.body,
-  });
-  return res.status;
-}
 
