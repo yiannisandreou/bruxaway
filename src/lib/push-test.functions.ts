@@ -35,7 +35,7 @@ export const sendTestPush = createServerFn({ method: "POST" })
     }
 
     const { sendPush } = await import("@/lib/send-push.server");
-    const status = await sendPush(
+    const delivery = await sendPush(
       target,
       privateKey,
       origin,
@@ -43,11 +43,17 @@ export const sendTestPush = createServerFn({ method: "POST" })
     );
     await supabaseAdmin
       .from("push_delivery_failures")
-      .insert({ endpoint: target.endpoint, status, detail: "manual test send" })
+      .insert({
+        endpoint: target.endpoint,
+        status: delivery.status,
+        detail: delivery.detail
+          ? `manual test send: ${delivery.detail}`.slice(0, 300)
+          : "manual test send",
+      })
       .then(() => undefined, () => undefined);
 
-    if (status >= 400) {
-      return { ok: false as const, reason: `Push service rejected it (${status}).` };
+    if (delivery.status >= 400) {
+      return { ok: false as const, reason: `Push service rejected it (${delivery.status}).` };
     }
     return { ok: true as const };
   });

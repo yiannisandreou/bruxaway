@@ -16,3 +16,4 @@
 - [x] Verified build + cron (200 with secret) + deep link + UI
 - [x] pg_cron/pg_net job `unclench-prompt-tick` every 10 min hitting the live endpoint (secret stored in `cron_config`)
 - [x] Minute-accurate slot spread + prune dead subscriptions (`push_delivery_failures`)
+- [x] RFC 8291 `aes128gcm` delivery for Apple Web Push, with stale subscription cleanup

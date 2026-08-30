@@ -83,20 +83,34 @@ async function promptHandler({ request }: { request: Request }) {
 
     try {
       const { sendPush } = await import("@/lib/send-push.server");
-      const status = await sendPush(row, privateKey, origin);
+      const delivery = await sendPush(row, privateKey, origin);
       // Log every send (not just failures) so delivery problems can be told
       // apart from the phone holding notifications back.
       await supabaseAdmin
         .from("push_delivery_failures")
-        .insert({ endpoint: row.endpoint, status, detail: "cron send" })
+        .insert({
+          endpoint: row.endpoint,
+          status: delivery.status,
+          detail: delivery.detail
+            ? `cron send: ${delivery.detail}`.slice(0, 300)
+            : "cron send",
+        })
         .then(() => undefined, () => undefined);
-      if (status === 400 || status === 404 || status === 410) {
+      if (
+        delivery.status === 400 ||
+        delivery.status === 404 ||
+        delivery.status === 410
+      ) {
         // Subscription is dead or undeliverable (app reinstalled, permission
         // revoked, or created with an outdated VAPID key) — prune it so cron
         // stops hammering an endpoint that can never succeed.
         await supabaseAdmin
           .from("push_delivery_failures")
-          .insert({ endpoint: row.endpoint, status, detail: "pruned expired subscription" });
+          .insert({
+            endpoint: row.endpoint,
+            status: delivery.status,
+            detail: "pruned expired subscription",
+          });
         if (row.device_id) {
           await supabaseAdmin
             .from("device_push_subscriptions")
