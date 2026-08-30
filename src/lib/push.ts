@@ -158,14 +158,35 @@ export async function sendTestReminder(): Promise<{ ok: boolean; reason?: string
     return { ok: false, reason: "This browser can't receive reminders." };
   }
   const reg = await navigator.serviceWorker.getRegistration();
-  const sub = await reg?.pushManager.getSubscription();
-  if (!sub) return { ok: false, reason: "Turn reminders on first." };
+  if (!reg) return { ok: false, reason: "Turn reminders on first." };
   const { sendTestPush } = await import("@/lib/push-test.functions");
-  try {
-    return await sendTestPush({ data: { endpoint: sub.endpoint } });
-  } catch {
-    return { ok: false, reason: "Couldn't send the test reminder." };
+
+  const send = async (endpoint: string) => {
+    try {
+      return await sendTestPush({ data: { endpoint } });
+    } catch {
+      return { ok: false as const, reason: "Couldn't send the test reminder." };
+    }
+  };
+
+  let sub = await usableSubscription(reg);
+  if (sub) {
+    const res = await send(sub.endpoint);
+    // A rejected send with a verified-current key means the server-side row is
+    // stale or the subscription died — resubscribe once and retry.
+    if (res.ok || res.reason === "Turn reminders on first.") return res;
   }
+
+  try {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+    await storeSubscription(sub);
+  } catch {
+    return { ok: false, reason: "Couldn't refresh the reminder subscription." };
+  }
+  return send(sub.endpoint);
 }
 
 /** True when this browser can actually do push + service workers. */
