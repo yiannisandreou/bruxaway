@@ -82,6 +82,7 @@ async function promptHandler({ request }: { request: Request }) {
     if (insErr) continue;
 
     try {
+      const { sendPush } = await import("@/lib/send-push.server");
       const status = await sendPush(row, privateKey, origin);
       // Log every send (not just failures) so delivery problems can be told
       // apart from the phone holding notifications back.
