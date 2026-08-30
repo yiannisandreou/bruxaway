@@ -58,6 +58,44 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 }
 
 /**
+ * Returns the existing subscription only if it was created with the current
+ * VAPID public key. A subscription made with an older key gets rejected by the
+ * push service (HTTP 400) on every send, so it's unsubscribed and a fresh one
+ * is created instead. Returns null when there is no usable subscription.
+ */
+async function usableSubscription(
+  reg: ServiceWorkerRegistration,
+): Promise<PushSubscription | null> {
+  const sub = await reg.pushManager.getSubscription();
+  if (!sub) return null;
+  const key = sub.options?.applicationServerKey;
+  if (!key) return sub; // can't verify on this browser — assume it's current
+  const expected = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+  const actual = new Uint8Array(key);
+  const matches =
+    actual.length === expected.length && actual.every((b, i) => b === expected[i]);
+  if (matches) return sub;
+  await sub.unsubscribe().catch(() => undefined);
+  return null;
+}
+
+/** Stores a subscription server-side (account row when signed in, else device row). */
+async function storeSubscription(sub: PushSubscription): Promise<void> {
+  const keys = sub.toJSON().keys ?? {};
+  if (await signedIn()) {
+    await savePushSubscription({
+      data: {
+        endpoint: sub.endpoint,
+        p256dh: keys["p256dh"] ?? "",
+        auth_key: keys["auth"] ?? "",
+      },
+    });
+  } else {
+    await saveDevicePushSubscription({ data: devicePayload(sub) });
+  }
+}
+
+/**
  * Requests notification permission, subscribes this device to push, and stores
  * the subscription server-side so the cron can deliver random check-in prompts.
  * No account required: signed-out devices are stored against a local device id.
@@ -72,7 +110,7 @@ export async function enableNotifications(): Promise<{ ok: boolean; reason?: str
   const reg = await registerServiceWorker();
   if (!reg) return { ok: false, reason: "Couldn't register the background service worker." };
 
-  let sub = await reg.pushManager.getSubscription();
+  let sub = await usableSubscription(reg);
   if (!sub) {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
@@ -80,7 +118,15 @@ export async function enableNotifications(): Promise<{ ok: boolean; reason?: str
     });
   }
 
-  const keys = sub.toJSON().keys ?? {};
+  try {
+    await storeSubscription(sub);
+  } catch {
+    // Keep local state honest if the subscription couldn't be stored.
+    await sub.unsubscribe();
+    return { ok: false, reason: "Couldn't save reminders. Check your connection and try again." };
+  }
+  return { ok: true };
+}
   try {
     if (await signedIn()) {
       await savePushSubscription({
