@@ -58,6 +58,44 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 }
 
 /**
+ * Returns the existing subscription only if it was created with the current
+ * VAPID public key. A subscription made with an older key gets rejected by the
+ * push service (HTTP 400) on every send, so it's unsubscribed and a fresh one
+ * is created instead. Returns null when there is no usable subscription.
+ */
+async function usableSubscription(
+  reg: ServiceWorkerRegistration,
+): Promise<PushSubscription | null> {
+  const sub = await reg.pushManager.getSubscription();
+  if (!sub) return null;
+  const key = sub.options?.applicationServerKey;
+  if (!key) return sub; // can't verify on this browser — assume it's current
+  const expected = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+  const actual = new Uint8Array(key);
+  const matches =
+    actual.length === expected.length && actual.every((b, i) => b === expected[i]);
+  if (matches) return sub;
+  await sub.unsubscribe().catch(() => undefined);
+  return null;
+}
+
+/** Stores a subscription server-side (account row when signed in, else device row). */
+async function storeSubscription(sub: PushSubscription): Promise<void> {
+  const keys = sub.toJSON().keys ?? {};
+  if (await signedIn()) {
+    await savePushSubscription({
+      data: {
+        endpoint: sub.endpoint,
+        p256dh: keys["p256dh"] ?? "",
+        auth_key: keys["auth"] ?? "",
+      },
+    });
+  } else {
+    await saveDevicePushSubscription({ data: devicePayload(sub) });
+  }
+}
+
+/**
  * Requests notification permission, subscribes this device to push, and stores
  * the subscription server-side so the cron can deliver random check-in prompts.
  * No account required: signed-out devices are stored against a local device id.
@@ -72,7 +110,7 @@ export async function enableNotifications(): Promise<{ ok: boolean; reason?: str
   const reg = await registerServiceWorker();
   if (!reg) return { ok: false, reason: "Couldn't register the background service worker." };
 
-  let sub = await reg.pushManager.getSubscription();
+  let sub = await usableSubscription(reg);
   if (!sub) {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
@@ -80,19 +118,8 @@ export async function enableNotifications(): Promise<{ ok: boolean; reason?: str
     });
   }
 
-  const keys = sub.toJSON().keys ?? {};
   try {
-    if (await signedIn()) {
-      await savePushSubscription({
-        data: {
-          endpoint: sub.endpoint,
-          p256dh: keys["p256dh"] ?? "",
-          auth_key: keys["auth"] ?? "",
-        },
-      });
-    } else {
-      await saveDevicePushSubscription({ data: devicePayload(sub) });
-    }
+    await storeSubscription(sub);
   } catch {
     // Keep local state honest if the subscription couldn't be stored.
     await sub.unsubscribe();
@@ -131,14 +158,37 @@ export async function sendTestReminder(): Promise<{ ok: boolean; reason?: string
     return { ok: false, reason: "This browser can't receive reminders." };
   }
   const reg = await navigator.serviceWorker.getRegistration();
-  const sub = await reg?.pushManager.getSubscription();
-  if (!sub) return { ok: false, reason: "Turn reminders on first." };
+  if (!reg) return { ok: false, reason: "Turn reminders on first." };
   const { sendTestPush } = await import("@/lib/push-test.functions");
-  try {
-    return await sendTestPush({ data: { endpoint: sub.endpoint } });
-  } catch {
-    return { ok: false, reason: "Couldn't send the test reminder." };
+
+  const send = async (endpoint: string) => {
+    try {
+      return await sendTestPush({ data: { endpoint } });
+    } catch {
+      return { ok: false as const, reason: "Couldn't send the test reminder." };
+    }
+  };
+
+  let sub = await usableSubscription(reg);
+  if (sub) {
+    const res = await send(sub.endpoint);
+    if (res.ok) return res;
+    // A rejected send means the subscription or its server-side row is stale —
+    // drop it and resubscribe once, then retry.
+    if (res.reason === "Turn reminders on first.") return res;
+    await sub.unsubscribe().catch(() => undefined);
   }
+
+  try {
+    sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+    await storeSubscription(sub);
+  } catch {
+    return { ok: false, reason: "Couldn't refresh the reminder subscription." };
+  }
+  return send(sub.endpoint);
 }
 
 /** True when this browser can actually do push + service workers. */

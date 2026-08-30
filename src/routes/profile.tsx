@@ -270,7 +270,9 @@ function ProfilePage() {
             </p>
             <p className="mt-1 text-[13px] leading-snug text-ink/65">
               {!canPush
-                ? "Push reminders need a mobile browser that supports them — install Unclench to your home screen on iOS."
+                ? isIos()
+                  ? "On iPhone, reminders require installing Unclench first: tap Share → “Add to Home Screen”, then open it from the home screen and enable reminders there."
+                  : "Push reminders need a browser that supports them — on iPhone, install Unclench to your home screen first."
                 : user
                   ? "Random check-in prompts pushed to this device during your waking hours."
                   : "Random check-in prompts pushed to this device — no account needed."}
@@ -304,8 +306,9 @@ function ProfilePage() {
               Send a test reminder
             </button>
             <p className="mt-2 text-[11px] leading-snug text-ink/45">
-              Nothing arriving while Unclench is fully closed? Set Android
-              Settings → Apps → Unclench → Battery to “Unrestricted”.
+              {isIos()
+                ? "Nothing arriving? Check iPhone Settings → Notifications → Unclench are allowed, and keep Low Power Mode off."
+                : "Nothing arriving while Unclench is fully closed? Set Android Settings → Apps → Unclench → Battery to “Unrestricted”."}
             </p>
           </>
         )}
@@ -366,6 +369,15 @@ function ProfilePage() {
 
 const WHEEL_ITEM_H = 40;
 const WHEEL_VISIBLE = 5; // odd number — middle row is the selected one
+
+/** iPhone / iPad detection (including iPadOS reporting as Mac). */
+function isIos(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
 
 function HourWheel({
   label,
