@@ -85,6 +85,13 @@
       "when": 1788080593774,
       "tag": "0011_lock_server_only_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788080608082,
+      "tag": "0012_revoke_anon_role_requests",
+      "breakpoints": true
     }
   ]
 }
