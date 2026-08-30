@@ -14,3 +14,5 @@
 - [x] Register SW + manifest in `__root.tsx`
 - [x] Auto-open ReportSheet on `?checkin=1` (notification deep link)
 - [x] Verified build + cron (200 with secret) + deep link + UI
+- [x] pg_cron/pg_net job `unclench-prompt-tick` every 10 min hitting the live endpoint (secret stored in `cron_config`)
+- [x] Minute-accurate slot spread + prune dead subscriptions (`push_delivery_failures`)
