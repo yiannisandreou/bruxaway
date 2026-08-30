@@ -172,9 +172,11 @@ export async function sendTestReminder(): Promise<{ ok: boolean; reason?: string
   let sub = await usableSubscription(reg);
   if (sub) {
     const res = await send(sub.endpoint);
-    // A rejected send with a verified-current key means the server-side row is
-    // stale or the subscription died — resubscribe once and retry.
-    if (res.ok || res.reason === "Turn reminders on first.") return res;
+    if (res.ok) return res;
+    // A rejected send means the subscription or its server-side row is stale —
+    // drop it and resubscribe once, then retry.
+    if (res.reason === "Turn reminders on first.") return res;
+    await sub.unsubscribe().catch(() => undefined);
   }
 
   try {
