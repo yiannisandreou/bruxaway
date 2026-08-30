@@ -127,25 +127,6 @@ export async function enableNotifications(): Promise<{ ok: boolean; reason?: str
   }
   return { ok: true };
 }
-  try {
-    if (await signedIn()) {
-      await savePushSubscription({
-        data: {
-          endpoint: sub.endpoint,
-          p256dh: keys["p256dh"] ?? "",
-          auth_key: keys["auth"] ?? "",
-        },
-      });
-    } else {
-      await saveDevicePushSubscription({ data: devicePayload(sub) });
-    }
-  } catch {
-    // Keep local state honest if the subscription couldn't be stored.
-    await sub.unsubscribe();
-    return { ok: false, reason: "Couldn't save reminders. Check your connection and try again." };
-  }
-  return { ok: true };
-}
 
 /** Unsubscribes this device from push and removes the server-side subscription. */
 export async function disableNotifications(): Promise<void> {
