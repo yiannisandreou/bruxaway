@@ -18,12 +18,6 @@ export const savePushSubscription = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("push_subscriptions")
-      .delete()
-      .eq("user_id", context.userId)
-      .neq("endpoint", data.endpoint);
-    if (error) throw error;
-    const { error: upsertError } = await context.supabase
-      .from("push_subscriptions")
       .upsert(
         {
           user_id: context.userId,
@@ -33,7 +27,7 @@ export const savePushSubscription = createServerFn({ method: "POST" })
         },
         { onConflict: "user_id,endpoint" },
       );
-    if (upsertError) throw upsertError;
+    if (error) throw error;
     return { ok: true };
   });
 
