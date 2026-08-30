@@ -122,6 +122,25 @@ export async function disableNotifications(): Promise<void> {
 }
 
 
+/**
+ * Fires one reminder to this device right now, so closed-app delivery can be
+ * verified without waiting for the next random prompt.
+ */
+export async function sendTestReminder(): Promise<{ ok: boolean; reason?: string }> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+    return { ok: false, reason: "This browser can't receive reminders." };
+  }
+  const reg = await navigator.serviceWorker.getRegistration();
+  const sub = await reg?.pushManager.getSubscription();
+  if (!sub) return { ok: false, reason: "Turn reminders on first." };
+  const { sendTestPush } = await import("@/lib/push-test.functions");
+  try {
+    return await sendTestPush({ data: { endpoint: sub.endpoint } });
+  } catch {
+    return { ok: false, reason: "Couldn't send the test reminder." };
+  }
+}
+
 /** True when this browser can actually do push + service workers. */
 export function pushSupported(): boolean {
   return (
