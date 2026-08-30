@@ -78,6 +78,13 @@
       "when": 1788079766749,
       "tag": "0010_schedule_prompt_cron",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788080593774,
+      "tag": "0011_lock_server_only_tables",
+      "breakpoints": true
     }
   ]
 }
