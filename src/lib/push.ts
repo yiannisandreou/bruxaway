@@ -151,19 +151,36 @@ export async function disableNotifications(): Promise<void> {
 
 /**
  * Fires one reminder to this device right now, so closed-app delivery can be
- * verified without waiting for the next random prompt.
+ * verified without waiting for the next random prompt. The live subscription is
+ * sent to the server, so it works even if the stored record went stale.
  */
 export async function sendTestReminder(): Promise<{ ok: boolean; reason?: string }> {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
     return { ok: false, reason: "This browser can't receive reminders." };
   }
+  if (typeof Notification !== "undefined" && Notification.permission !== "granted") {
+    return { ok: false, reason: "Notifications aren't allowed for this site yet." };
+  }
   const reg = await navigator.serviceWorker.getRegistration();
   if (!reg) return { ok: false, reason: "Turn reminders on first." };
   const { sendTestPush } = await import("@/lib/push-test.functions");
 
-  const send = async (endpoint: string) => {
+  const send = async (sub: PushSubscription) => {
+    const keys = sub.toJSON().keys ?? {};
+    const s = readSettings();
     try {
-      return await sendTestPush({ data: { endpoint } });
+      return await sendTestPush({
+        data: {
+          endpoint: sub.endpoint,
+          p256dh: keys["p256dh"] ?? "",
+          auth_key: keys["auth"] ?? "",
+          device_id: deviceId(),
+          prompts_per_day: s.promptsPerDay,
+          start_hour: s.startHour,
+          end_hour: s.endHour,
+          timezone: localTimezone(),
+        },
+      });
     } catch {
       return { ok: false as const, reason: "Couldn't send the test reminder." };
     }
@@ -171,11 +188,10 @@ export async function sendTestReminder(): Promise<{ ok: boolean; reason?: string
 
   let sub = await usableSubscription(reg);
   if (sub) {
-    const res = await send(sub.endpoint);
+    const res = await send(sub);
     if (res.ok) return res;
-    // A rejected send means the subscription or its server-side row is stale —
-    // drop it and resubscribe once, then retry.
-    if (res.reason === "Turn reminders on first.") return res;
+    // A rejected send means the subscription itself is dead — drop it (and its
+    // server-side rows) and resubscribe once, then retry.
     await Promise.all([
       removeDevicePushSubscription({
         data: { device_id: deviceId(), endpoint: sub.endpoint },
@@ -194,8 +210,9 @@ export async function sendTestReminder(): Promise<{ ok: boolean; reason?: string
   } catch {
     return { ok: false, reason: "Couldn't refresh the reminder subscription." };
   }
-  return send(sub.endpoint);
+  return send(sub);
 }
+
 
 /** True when this browser can actually do push + service workers. */
 export function pushSupported(): boolean {

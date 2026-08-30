@@ -92,6 +92,13 @@
       "when": 1788080608082,
       "tag": "0012_revoke_anon_role_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788123350774,
+      "tag": "0013_dedupe_push_subscription_endpoints",
+      "breakpoints": true
     }
   ]
 }

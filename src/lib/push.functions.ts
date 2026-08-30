@@ -16,6 +16,16 @@ export const savePushSubscription = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    // An endpoint belongs to exactly one browser install, so claim it for this
+    // account and drop any stale rows that still point at it elsewhere.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("device_push_subscriptions").delete().eq("endpoint", data.endpoint);
+    await supabaseAdmin
+      .from("push_subscriptions")
+      .delete()
+      .eq("endpoint", data.endpoint)
+      .neq("user_id", context.userId);
+
     const { error } = await context.supabase
       .from("push_subscriptions")
       .upsert(
@@ -30,6 +40,7 @@ export const savePushSubscription = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
 
 /** Removes this device's push subscription (used when notifications are turned off). */
 export const removePushSubscription = createServerFn({ method: "POST" })
@@ -68,12 +79,21 @@ export const saveDevicePushSubscription = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // One endpoint belongs to one install: clear other endpoints for this device
+    // and any other device/account rows still holding this endpoint.
     const { error: deleteError } = await supabaseAdmin
       .from("device_push_subscriptions")
       .delete()
       .eq("device_id", data.device_id)
       .neq("endpoint", data.endpoint);
     if (deleteError) throw deleteError;
+    await supabaseAdmin
+      .from("device_push_subscriptions")
+      .delete()
+      .eq("endpoint", data.endpoint)
+      .neq("device_id", data.device_id);
+
+
     const { error } = await supabaseAdmin
       .from("device_push_subscriptions")
       .upsert({ ...data, updated_at: new Date().toISOString() }, { onConflict: "device_id,endpoint" });
