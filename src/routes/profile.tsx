@@ -304,8 +304,9 @@ function ProfilePage() {
               Send a test reminder
             </button>
             <p className="mt-2 text-[11px] leading-snug text-ink/45">
-              Nothing arriving while Unclench is fully closed? Set Android
-              Settings → Apps → Unclench → Battery to “Unrestricted”.
+              {isIos()
+                ? "Nothing arriving? Check iPhone Settings → Notifications → Unclench are allowed, and keep Low Power Mode off."
+                : "Nothing arriving while Unclench is fully closed? Set Android Settings → Apps → Unclench → Battery to “Unrestricted”."}
             </p>
           </>
         )}
