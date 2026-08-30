@@ -79,11 +79,20 @@ export const saveDevicePushSubscription = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // One endpoint belongs to one install: clear other endpoints for this device
+    // and any other device/account rows still holding this endpoint.
     const { error: deleteError } = await supabaseAdmin
       .from("device_push_subscriptions")
       .delete()
-      .or(`and(device_id.eq.${data.device_id},endpoint.neq.${data.endpoint}),and(device_id.neq.${data.device_id},endpoint.eq.${data.endpoint})`);
+      .eq("device_id", data.device_id)
+      .neq("endpoint", data.endpoint);
     if (deleteError) throw deleteError;
+    await supabaseAdmin
+      .from("device_push_subscriptions")
+      .delete()
+      .eq("endpoint", data.endpoint)
+      .neq("device_id", data.device_id);
+
 
     const { error } = await supabaseAdmin
       .from("device_push_subscriptions")
