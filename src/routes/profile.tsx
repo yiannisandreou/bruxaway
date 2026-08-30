@@ -74,6 +74,16 @@ function ProfilePage() {
 
   const canPush = pushSupported();
 
+  const testReminder = async () => {
+    setNotifMsg("Sending a test reminder…");
+    const res = await sendTestReminder();
+    setNotifMsg(
+      res.ok
+        ? "Sent — it should arrive within a few seconds, even with the app closed."
+        : (res.reason ?? "Couldn't send the test reminder."),
+    );
+  };
+
   const toggleNotifications = async () => {
     if (settings.notifications) {
       await disableNotifications();
@@ -284,6 +294,21 @@ function ProfilePage() {
             />
           </button>
         </div>
+        {settings.notifications && canPush && (
+          <>
+            <button
+              type="button"
+              onClick={testReminder}
+              className="mt-3 rounded-full border border-clay/40 px-3 py-1.5 text-[12px] font-medium text-ink/70 transition-colors hover:bg-cream"
+            >
+              Send a test reminder
+            </button>
+            <p className="mt-2 text-[11px] leading-snug text-ink/45">
+              Nothing arriving while Unclench is fully closed? Set Android
+              Settings → Apps → Unclench → Battery to “Unrestricted”.
+            </p>
+          </>
+        )}
         {notifMsg && <p className="mt-2 text-[12px] text-ink/50">{notifMsg}</p>}
       </section>
 
