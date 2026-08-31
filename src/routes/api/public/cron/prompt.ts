@@ -237,12 +237,13 @@ async function promptHandler({ request }: { request: Request }) {
         continue;
       }
     } catch (err) {
-      await supabaseAdmin
-        .from("push_delivery_failures")
-        .insert({ endpoint: row.endpoint, detail: String(err).slice(0, 300) })
-        .then(() => undefined, () => undefined);
+      // Slot stays due so the next tick retries this reminder.
+      await logDelivery(
+        supabaseAdmin,
+        row.endpoint,
+        `slot ${target.slot_local} retained after error: ${String(err)}`,
+      );
     }
-    fired++;
   }
 
   return Response.json({ fired, eligible: targets.length });
