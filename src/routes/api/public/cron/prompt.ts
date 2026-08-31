@@ -134,38 +134,63 @@ async function promptHandler({ request }: { request: Request }) {
       .sort((a, b) => minuteOfDay(a.slot_local) - minuteOfDay(b.slot_local));
     if (due.length === 0) continue;
 
-    // Pacing: never two prompts inside the minimum gap.
+    // Pacing: never two prompts inside the minimum gap of a *successful* send.
     if (row.last_fired_at) {
       const since = (Date.now() - new Date(row.last_fired_at).getTime()) / 60000;
-      if (since < MIN_GAP_MINUTES) continue;
+      if (since < MIN_GAP_MINUTES) {
+        await logDelivery(
+          supabaseAdmin,
+          row.endpoint,
+          `skipped slot ${due[0]!.slot_local}: only ${Math.round(since)} min since last send`,
+        );
+        continue;
+      }
     }
 
-    // Older due slots are skipped (missed ticks) rather than fired back-to-back.
-    await supabaseAdmin
-      .from("prompt_schedule")
-      .update({ fired: true })
-      .in("id", due.map((s) => s.id));
+    // Exactly one slot per tick; the freshest due slot is the one that matches
+    // "right now". Slots are only retired once the push has been accepted, so a
+    // failed tick leaves them due and the next tick retries instead of losing
+    // the reminder for the day.
+    const target = due[due.length - 1]!;
+    const superseded = due.slice(0, -1);
 
     const { error: insErr } = await supabaseAdmin.from("prompt_events").insert({
       user_id: row.user_id,
       device_id: row.device_id,
       fired_at: new Date().toISOString(),
     });
-    if (insErr) continue;
+    if (insErr) {
+      await logDelivery(
+        supabaseAdmin,
+        row.endpoint,
+        `slot ${target.slot_local} retained: record failed (${insErr.message})`,
+      );
+      continue;
+    }
 
     try {
       const { sendPush } = await import("@/lib/send-push.server");
       const delivery = await sendPush(row, privateKey, origin);
-      await supabaseAdmin
-        .from("push_delivery_failures")
-        .insert({
-          endpoint: row.endpoint,
-          status: delivery.status,
-          detail: delivery.detail
-            ? `cron send: ${delivery.detail}`.slice(0, 300)
-            : "cron send",
-        })
-        .then(() => undefined, () => undefined);
+      await logDelivery(
+        supabaseAdmin,
+        row.endpoint,
+        delivery.detail ? `cron send: ${delivery.detail}` : "cron send",
+        delivery.status,
+      );
+      const accepted = delivery.status >= 200 && delivery.status < 300;
+      if (accepted) {
+        await supabaseAdmin
+          .from("prompt_schedule")
+          .update({ fired: true })
+          .in("id", [target, ...superseded].map((s) => s.id));
+      } else {
+        await logDelivery(
+          supabaseAdmin,
+          row.endpoint,
+          `slot ${target.slot_local} retained for retry (status ${delivery.status})`,
+          delivery.status,
+        );
+      }
       if (
         delivery.status === 400 ||
         delivery.status === 404 ||
