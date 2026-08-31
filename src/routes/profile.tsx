@@ -343,6 +343,30 @@ function ProfilePage() {
         </div>
         {settings.notifications && canPush && (
           <>
+            {pushStatus && (
+              <div className="mt-3 rounded-xl bg-cream/70 px-3 py-2">
+                <p className="text-[12px] font-medium text-ink/75">
+                  {pushStatus.registered
+                    ? `Registered for reminders · ${pushStatus.firedToday} sent today`
+                    : "Not registered on the server — reminders can't reach this device."}
+                </p>
+                {pushStatus.registered && !pushStatus.isPatient && (
+                  <p className="mt-1 text-[11px] leading-snug text-ink/55">
+                    This account is a clinician account, so it doesn't receive check-in prompts.
+                    Sign in with your patient account to get reminders.
+                  </p>
+                )}
+                {!pushStatus.registered && (
+                  <button
+                    type="button"
+                    onClick={repairReminders}
+                    className="mt-2 rounded-full bg-brand px-3 py-1.5 text-[12px] font-semibold text-cream"
+                  >
+                    Fix reminders
+                  </button>
+                )}
+              </div>
+            )}
             <button
               type="button"
               onClick={testReminder}
@@ -357,6 +381,7 @@ function ProfilePage() {
             </p>
           </>
         )}
+
         {notifMsg && <p className="mt-2 text-[12px] text-ink/50">{notifMsg}</p>}
       </section>
 
