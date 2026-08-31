@@ -9,16 +9,19 @@ export type SessionState = {
   loading: boolean;
   user: User | null;
   role: AppRole | null;
+  roles: AppRole[];
 };
 
-async function loadRole(userId: string): Promise<AppRole | null> {
-  const { data } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  return (data?.role as AppRole | undefined) ?? null;
+/** Highest-privilege role wins when an account holds several. */
+function pickRole(roles: AppRole[]): AppRole | null {
+  if (roles.includes("physician")) return "physician";
+  if (roles.includes("patient")) return "patient";
+  return null;
+}
+
+async function loadRoles(userId: string): Promise<AppRole[]> {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  return ((data ?? []).map((r) => r.role) as AppRole[]).filter(Boolean);
 }
 
 /** Ensures the signed-in user has a profile row and a role claim. */
@@ -29,18 +32,20 @@ export async function ensureAccount(user: User, role: AppRole, fullName?: string
     ...(fullName ? { full_name: fullName } : {}),
     updated_at: new Date().toISOString(),
   });
-  const existing = await loadRole(user.id);
-  if (!existing) {
+  const existing = await loadRoles(user.id);
+  if (!existing.length) {
     await supabase.from("user_roles").insert({ user_id: user.id, role });
   }
-  return existing ?? role;
+  return pickRole(existing) ?? role;
 }
+
 
 export function useSession(): SessionState {
   const [state, setState] = useState<SessionState>({
     loading: true,
     user: null,
     role: null,
+    roles: [],
   });
 
   useEffect(() => {
@@ -48,12 +53,13 @@ export function useSession(): SessionState {
 
     const handle = async (user: User | null) => {
       if (!user) {
-        if (alive) setState({ loading: false, user: null, role: null });
+        if (alive) setState({ loading: false, user: null, role: null, roles: [] });
         return;
       }
-      const role = await loadRole(user.id);
-      if (alive) setState({ loading: false, user, role });
+      const roles = await loadRoles(user.id);
+      if (alive) setState({ loading: false, user, role: pickRole(roles), roles });
     };
+
 
     void supabase.auth.getSession().then(({ data }) => handle(data.session?.user ?? null));
 
