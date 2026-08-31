@@ -116,6 +116,14 @@ function ProfilePage() {
         ? "Sent — it should arrive within a few seconds, even with the app closed."
         : (res.reason ?? "Couldn't send the test reminder."),
     );
+    await refreshPushStatus();
+  };
+
+  const repairReminders = async () => {
+    setNotifMsg("Re-registering this device…");
+    await ensureSubscriptionRegistered();
+    await refreshPushStatus();
+    setNotifMsg("Re-registered — reminders will resume.");
   };
 
   const toggleNotifications = async () => {
@@ -123,6 +131,7 @@ function ProfilePage() {
       await disableNotifications();
       update({ notifications: false });
       setNotifMsg("Reminders off.");
+      await refreshPushStatus();
       return;
     }
     setNotifMsg("Enabling…");
@@ -134,7 +143,9 @@ function ProfilePage() {
     } else {
       setNotifMsg(res.reason ?? "Couldn't enable reminders.");
     }
+    await refreshPushStatus();
   };
+
 
   const doSync = async () => {
     setSyncState("Syncing…");
