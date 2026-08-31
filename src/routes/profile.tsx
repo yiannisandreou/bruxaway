@@ -54,9 +54,38 @@ function ProfilePage() {
   const navigate = useNavigate();
   const [syncState, setSyncState] = useState<string | null>(null);
   const [notifMsg, setNotifMsg] = useState<string | null>(null);
+  const [pushStatus, setPushStatus] = useState<
+    | { registered: boolean; kind: "account" | "device" | null; isPatient: boolean; firedToday: number }
+    | null
+  >(null);
   const [clinicianRequest, setClinicianRequest] = useState<
     "pending" | "approved" | "rejected" | null
   >(null);
+
+  // What the server actually knows about this device's reminders, so the toggle
+  // can't claim reminders are on while nothing is registered.
+  const refreshPushStatus = async () => {
+    const sub = await currentSubscription();
+    if (!sub) {
+      setPushStatus({ registered: false, kind: null, isPatient: true, firedToday: 0 });
+      return;
+    }
+    try {
+      const res = await pushRegistrationStatus({
+        data: { endpoint: sub.endpoint, device_id: deviceId() },
+      });
+      setPushStatus(res);
+    } catch {
+      setPushStatus(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!hydrated || !pushSupported()) return;
+    void refreshPushStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, user?.id]);
+
 
   useEffect(() => {
     if (!user || role === "physician") {
