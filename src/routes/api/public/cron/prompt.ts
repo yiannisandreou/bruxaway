@@ -202,6 +202,7 @@ async function promptHandler({ request }: { request: Request }) {
           .from("prompt_schedule")
           .update({ fired: true })
           .in("id", [target, ...superseded].map((s) => s.id));
+        fired++;
       } else {
         await logDelivery(
           supabaseAdmin,
