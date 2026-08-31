@@ -45,6 +45,7 @@ export function useSession(): SessionState {
     loading: true,
     user: null,
     role: null,
+    roles: [],
   });
 
   useEffect(() => {
@@ -52,12 +53,13 @@ export function useSession(): SessionState {
 
     const handle = async (user: User | null) => {
       if (!user) {
-        if (alive) setState({ loading: false, user: null, role: null });
+        if (alive) setState({ loading: false, user: null, role: null, roles: [] });
         return;
       }
-      const role = await loadRole(user.id);
-      if (alive) setState({ loading: false, user, role });
+      const roles = await loadRoles(user.id);
+      if (alive) setState({ loading: false, user, role: pickRole(roles), roles });
     };
+
 
     void supabase.auth.getSession().then(({ data }) => handle(data.session?.user ?? null));
 
