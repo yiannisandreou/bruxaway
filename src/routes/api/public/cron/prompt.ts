@@ -62,6 +62,25 @@ function buildSlots(startHour: number, endHour: number, count: number): number[]
   return slots.filter((m) => m < end - 1);
 }
 
+/**
+ * Every skip, failure and send is recorded so a reminder that never went out is
+ * visible in diagnostics instead of disappearing silently.
+ */
+async function logDelivery(
+  admin: { from: (t: "push_delivery_failures") => any },
+  endpoint: string,
+  detail: string,
+  status?: number,
+) {
+  await admin
+    .from("push_delivery_failures")
+    .insert({ endpoint, status: status ?? null, detail: detail.slice(0, 300) })
+    .then(
+      () => undefined,
+      () => undefined,
+    );
+}
+
 function slotStamp(localDate: string, minutes: number): string {
   const h = String(Math.floor(minutes / 60)).padStart(2, "0");
   const m = String(minutes % 60).padStart(2, "0");
