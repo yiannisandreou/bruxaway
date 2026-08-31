@@ -1,10 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import {
-  allLocalEntries,
-  mergeLocalEntries,
-  type BehaviorId,
-  type Entry,
-} from "@/lib/ema";
+import { allLocalEntries, mergeLocalEntries, type BehaviorId, type Entry } from "@/lib/ema";
 
 type Row = {
   id: string;
@@ -74,9 +69,7 @@ export async function fetchPromptAdherence(patientId: string, days = 14) {
   const rows = data ?? [];
   const tz = profile?.timezone || "UTC";
   const localDay = (iso: string) =>
-    new Intl.DateTimeFormat("en-CA", { timeZone: tz, dateStyle: "short" }).format(
-      new Date(iso),
-    );
+    new Intl.DateTimeFormat("en-CA", { timeZone: tz, dateStyle: "short" }).format(new Date(iso));
   const today = localDay(new Date().toISOString());
   const todayRows = rows.filter((r) => localDay(r.fired_at) === today);
   return {
@@ -86,7 +79,6 @@ export async function fetchPromptAdherence(patientId: string, days = 14) {
     todayAnswered: todayRows.filter((r) => r.answered).length,
   };
 }
-
 
 export async function deleteEntry(id: string) {
   const userId = await currentUserId();

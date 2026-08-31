@@ -66,16 +66,9 @@ function buildSlots(startHour: number, endHour: number, count: number): number[]
  * Every skip, failure and send is recorded so a reminder that never went out is
  * visible in diagnostics instead of disappearing silently.
  */
-type Admin = Awaited<
-  typeof import("@/integrations/supabase/client.server")
->["supabaseAdmin"];
+type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
 
-async function logDelivery(
-  admin: Admin,
-  endpoint: string,
-  detail: string,
-  status?: number,
-) {
+async function logDelivery(admin: Admin, endpoint: string, detail: string, status?: number) {
   await admin
     .from("push_delivery_failures")
     .insert({ endpoint, status: status ?? null, detail: detail.slice(0, 300) })
@@ -146,7 +139,10 @@ async function promptHandler({ request }: { request: Request }) {
         await supabaseAdmin
           .from("prompt_schedule")
           .update({ fired: true })
-          .in("id", stale.map((s) => s.id));
+          .in(
+            "id",
+            stale.map((s) => s.id),
+          );
         const staleIds = new Set(stale.map((s) => s.id));
         slots = slots.filter((s) => !staleIds.has(s.id));
       }
@@ -205,7 +201,10 @@ async function promptHandler({ request }: { request: Request }) {
         await supabaseAdmin
           .from("prompt_schedule")
           .update({ fired: true })
-          .in("id", [target, ...superseded].map((s) => s.id));
+          .in(
+            "id",
+            [target, ...superseded].map((s) => s.id),
+          );
         fired++;
       } else {
         await logDelivery(
@@ -215,11 +214,7 @@ async function promptHandler({ request }: { request: Request }) {
           delivery.status,
         );
       }
-      if (
-        delivery.status === 400 ||
-        delivery.status === 404 ||
-        delivery.status === 410
-      ) {
+      if (delivery.status === 400 || delivery.status === 404 || delivery.status === 410) {
         // Subscription is dead (reinstall, revoked permission, stale VAPID key)
         // — prune it so cron stops hammering an endpoint that can't succeed.
         await supabaseAdmin.from("push_delivery_failures").insert({
@@ -233,10 +228,7 @@ async function promptHandler({ request }: { request: Request }) {
             .delete()
             .eq("endpoint", row.endpoint);
         } else {
-          await supabaseAdmin
-            .from("push_subscriptions")
-            .delete()
-            .eq("endpoint", row.endpoint);
+          await supabaseAdmin.from("push_subscriptions").delete().eq("endpoint", row.endpoint);
         }
         continue;
       }
