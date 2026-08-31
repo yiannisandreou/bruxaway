@@ -36,7 +36,12 @@ export const Route = createFileRoute("/_authenticated/clinic/$patientId")({
 function PatientPage() {
   const { patientId } = Route.useParams();
   const [entries, setEntries] = useState<Entry[]>([]);
-  const [adherence, setAdherence] = useState({ sent: 0, answered: 0 });
+  const [adherence, setAdherence] = useState({
+    sent: 0,
+    answered: 0,
+    todaySent: 0,
+    todayAnswered: 0,
+  });
   const [profile, setProfile] = useState<{ full_name: string | null; email: string | null } | null>(
     null,
   );
