@@ -18,7 +18,12 @@ import {
   disableNotifications,
   pushSupported,
   sendTestReminder,
+  currentSubscription,
+  ensureSubscriptionRegistered,
 } from "@/lib/push";
+import { pushRegistrationStatus } from "@/lib/push-status.functions";
+import { deviceId } from "@/lib/ema";
+
 
 
 export const Route = createFileRoute("/profile")({
