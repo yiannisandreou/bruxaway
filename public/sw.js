@@ -64,3 +64,49 @@ self.addEventListener("notificationclick", (event) => {
     })(),
   );
 });
+
+// The browser can rotate this device's push subscription at any time. When that
+// happens the stored record points at a dead endpoint and reminders silently
+// stop, so resubscribe and hand the new keys to the server right away.
+const VAPID_PUBLIC_KEY =
+  "BEwmNe1qXYlL1kWEePXR-wVRsAx6Y6JcHWUKpJ7I9obdGUOyqloHeTvQoOuO3yQnf5nUThv881Wcb5syVYBMGXE";
+
+function vapidKeyBytes(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = self.atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
+
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(
+    (async () => {
+      const oldEndpoint =
+        (event.oldSubscription && event.oldSubscription.endpoint) ||
+        (event.notification && undefined);
+      try {
+        const sub =
+          event.newSubscription ||
+          (await self.registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: vapidKeyBytes(VAPID_PUBLIC_KEY),
+          }));
+        const keys = sub.toJSON().keys || {};
+        await fetch("/api/public/push/renew", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            old_endpoint: oldEndpoint || sub.endpoint,
+            endpoint: sub.endpoint,
+            p256dh: keys.p256dh || "",
+            auth_key: keys.auth || "",
+          }),
+        });
+      } catch {
+        // The app re-registers on next open.
+      }
+    })(),
+  );
+});

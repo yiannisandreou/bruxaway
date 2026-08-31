@@ -20,6 +20,7 @@ import { Route as AuthenticatedClinicIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedClinicPatientIdRouteImport } from './routes/_authenticated/clinic.$patientId'
 import { Route as ApiPublicCronPromptRouteImport } from './routes/api/public/cron/prompt'
 import { Route as ApiPublicCronRegisterRouteImport } from './routes/api/public/cron/register'
+import { Route as ApiPublicPushRenewRouteImport } from './routes/api/public/push/renew'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -77,6 +78,11 @@ const ApiPublicCronRegisterRoute = ApiPublicCronRegisterRouteImport.update({
   path: '/api/public/cron/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPushRenewRoute = ApiPublicPushRenewRouteImport.update({
+  id: '/api/public/push/renew',
+  path: '/api/public/push/renew',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/clinic/': typeof AuthenticatedClinicIndexRoute
   '/api/public/cron/prompt': typeof ApiPublicCronPromptRoute
   '/api/public/cron/register': typeof ApiPublicCronRegisterRoute
+  '/api/public/push/renew': typeof ApiPublicPushRenewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/clinic': typeof AuthenticatedClinicIndexRoute
   '/api/public/cron/prompt': typeof ApiPublicCronPromptRoute
   '/api/public/cron/register': typeof ApiPublicCronRegisterRoute
+  '/api/public/push/renew': typeof ApiPublicPushRenewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/_authenticated/clinic/': typeof AuthenticatedClinicIndexRoute
   '/api/public/cron/prompt': typeof ApiPublicCronPromptRoute
   '/api/public/cron/register': typeof ApiPublicCronRegisterRoute
+  '/api/public/push/renew': typeof ApiPublicPushRenewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/clinic/'
     | '/api/public/cron/prompt'
     | '/api/public/cron/register'
+    | '/api/public/push/renew'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/clinic'
     | '/api/public/cron/prompt'
     | '/api/public/cron/register'
+    | '/api/public/push/renew'
   id:
     | '__root__'
     | '/'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clinic/'
     | '/api/public/cron/prompt'
     | '/api/public/cron/register'
+    | '/api/public/push/renew'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -166,6 +178,7 @@ export interface RootRouteChildren {
   TrendsRoute: typeof TrendsRoute
   ApiPublicCronPromptRoute: typeof ApiPublicCronPromptRoute
   ApiPublicCronRegisterRoute: typeof ApiPublicCronRegisterRoute
+  ApiPublicPushRenewRoute: typeof ApiPublicPushRenewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -247,6 +260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/push/renew': {
+      id: '/api/public/push/renew'
+      path: '/api/public/push/renew'
+      fullPath: '/api/public/push/renew'
+      preLoaderRoute: typeof ApiPublicPushRenewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -273,6 +293,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrendsRoute: TrendsRoute,
   ApiPublicCronPromptRoute: ApiPublicCronPromptRoute,
   ApiPublicCronRegisterRoute: ApiPublicCronRegisterRoute,
+  ApiPublicPushRenewRoute: ApiPublicPushRenewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

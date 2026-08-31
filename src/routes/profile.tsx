@@ -18,7 +18,12 @@ import {
   disableNotifications,
   pushSupported,
   sendTestReminder,
+  currentSubscription,
+  ensureSubscriptionRegistered,
 } from "@/lib/push";
+import { pushRegistrationStatus } from "@/lib/push-status.functions";
+import { deviceId } from "@/lib/ema";
+
 
 
 export const Route = createFileRoute("/profile")({
@@ -49,9 +54,38 @@ function ProfilePage() {
   const navigate = useNavigate();
   const [syncState, setSyncState] = useState<string | null>(null);
   const [notifMsg, setNotifMsg] = useState<string | null>(null);
+  const [pushStatus, setPushStatus] = useState<
+    | { registered: boolean; kind: "account" | "device" | null; isPatient: boolean; firedToday: number }
+    | null
+  >(null);
   const [clinicianRequest, setClinicianRequest] = useState<
     "pending" | "approved" | "rejected" | null
   >(null);
+
+  // What the server actually knows about this device's reminders, so the toggle
+  // can't claim reminders are on while nothing is registered.
+  const refreshPushStatus = async () => {
+    const sub = await currentSubscription();
+    if (!sub) {
+      setPushStatus({ registered: false, kind: null, isPatient: true, firedToday: 0 });
+      return;
+    }
+    try {
+      const res = await pushRegistrationStatus({
+        data: { endpoint: sub.endpoint, device_id: deviceId() },
+      });
+      setPushStatus(res);
+    } catch {
+      setPushStatus(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!hydrated || !pushSupported()) return;
+    void refreshPushStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, user?.id]);
+
 
   useEffect(() => {
     if (!user || role === "physician") {
@@ -82,6 +116,14 @@ function ProfilePage() {
         ? "Sent — it should arrive within a few seconds, even with the app closed."
         : (res.reason ?? "Couldn't send the test reminder."),
     );
+    await refreshPushStatus();
+  };
+
+  const repairReminders = async () => {
+    setNotifMsg("Re-registering this device…");
+    await ensureSubscriptionRegistered();
+    await refreshPushStatus();
+    setNotifMsg("Re-registered — reminders will resume.");
   };
 
   const toggleNotifications = async () => {
@@ -89,6 +131,7 @@ function ProfilePage() {
       await disableNotifications();
       update({ notifications: false });
       setNotifMsg("Reminders off.");
+      await refreshPushStatus();
       return;
     }
     setNotifMsg("Enabling…");
@@ -100,7 +143,9 @@ function ProfilePage() {
     } else {
       setNotifMsg(res.reason ?? "Couldn't enable reminders.");
     }
+    await refreshPushStatus();
   };
+
 
   const doSync = async () => {
     setSyncState("Syncing…");
@@ -298,6 +343,30 @@ function ProfilePage() {
         </div>
         {settings.notifications && canPush && (
           <>
+            {pushStatus && (
+              <div className="mt-3 rounded-xl bg-cream/70 px-3 py-2">
+                <p className="text-[12px] font-medium text-ink/75">
+                  {pushStatus.registered
+                    ? `Registered for reminders · ${pushStatus.firedToday} sent today`
+                    : "Not registered on the server — reminders can't reach this device."}
+                </p>
+                {pushStatus.registered && !pushStatus.isPatient && (
+                  <p className="mt-1 text-[11px] leading-snug text-ink/55">
+                    This account is a clinician account, so it doesn't receive check-in prompts.
+                    Sign in with your patient account to get reminders.
+                  </p>
+                )}
+                {!pushStatus.registered && (
+                  <button
+                    type="button"
+                    onClick={repairReminders}
+                    className="mt-2 rounded-full bg-brand px-3 py-1.5 text-[12px] font-semibold text-cream"
+                  >
+                    Fix reminders
+                  </button>
+                )}
+              </div>
+            )}
             <button
               type="button"
               onClick={testReminder}
@@ -312,6 +381,7 @@ function ProfilePage() {
             </p>
           </>
         )}
+
         {notifMsg && <p className="mt-2 text-[12px] text-ink/50">{notifMsg}</p>}
       </section>
 

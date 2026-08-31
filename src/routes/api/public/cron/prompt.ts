@@ -51,10 +51,19 @@ async function promptHandler({ request }: { request: Request }) {
   })[];
   let fired = 0;
 
-  const targets: (EligibleRow & { device_id?: string })[] = [
+  const all: (EligibleRow & { device_id?: string })[] = [
     ...rows,
     ...deviceRows.map((d) => ({ ...d, user_id: "" })),
   ];
+
+  // The daily cap is counted per person, but the eligible view yields one row
+  // per stored endpoint. Leftover endpoints from earlier installs would each
+  // consume slots from the same cap, starving the phone actually in use — so
+  // keep exactly one target per person/device.
+  const targets = [
+    ...new Map(all.map((r) => [r.device_id ?? r.user_id, r])).values(),
+  ];
+
 
   // Minutes already elapsed in the current hour — used to make the remaining
   // slot count minute-accurate so prompts spread evenly instead of bunching
