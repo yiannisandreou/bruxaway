@@ -42,12 +42,48 @@ async function currentUserId() {
   return data.session?.user.id ?? null;
 }
 
+/**
+ * Marks the most recent unanswered reminder as answered when a prompted
+ * check-in comes in, so adherence reflects reminders responded to rather than
+ * raw entry count.
+ */
+async function markPromptAnswered(userId: string, at: number) {
+  const since = new Date(at - 60 * 60 * 1000).toISOString();
+  const { data } = await supabase
+    .from("prompt_events")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("answered", false)
+    .gte("fired_at", since)
+    .lte("fired_at", new Date(at).toISOString())
+    .order("fired_at", { ascending: false })
+    .limit(1);
+  const id = data?.[0]?.id;
+  if (id) await supabase.from("prompt_events").update({ answered: true }).eq("id", id);
+}
+
 /** Upserts entries to the cloud when signed in; silently no-ops otherwise. */
 export async function pushEntries(entries: Entry[]) {
   const userId = await currentUserId();
   if (!userId || !entries.length) return;
   await supabase.from("entries").upsert(entries.map((e) => entryToRow(e, userId)));
+  const prompted = entries.filter((e) => e.prompted).sort((a, b) => b.ts - a.ts)[0];
+  if (prompted) await markPromptAnswered(userId, prompted.ts).catch(() => undefined);
 }
+
+/** Reminders fired vs answered for a patient over the last `days` days. */
+export async function fetchPromptAdherence(patientId: string, days = 14) {
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+  const { data, error } = await supabase
+    .from("prompt_events")
+    .select("answered")
+    .eq("user_id", patientId)
+    .gte("fired_at", since);
+  if (error) return { sent: 0, answered: 0 };
+  const rows = data ?? [];
+  return { sent: rows.length, answered: rows.filter((r) => r.answered).length };
+}
+
 
 export async function deleteEntry(id: string) {
   const userId = await currentUserId();

@@ -12,7 +12,7 @@ import {
   streakDays,
   type Entry,
 } from "@/lib/ema";
-import { fetchPatientEntries } from "@/lib/sync";
+import { fetchPatientEntries, fetchPromptAdherence } from "@/lib/sync";
 
 export const Route = createFileRoute("/_authenticated/clinic/$patientId")({
   head: () => ({
@@ -36,6 +36,7 @@ export const Route = createFileRoute("/_authenticated/clinic/$patientId")({
 function PatientPage() {
   const { patientId } = Route.useParams();
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [adherence, setAdherence] = useState({ sent: 0, answered: 0 });
   const [profile, setProfile] = useState<{ full_name: string | null; email: string | null } | null>(
     null,
   );
@@ -46,17 +47,20 @@ function PatientPage() {
     let alive = true;
     void (async () => {
       try {
-        const [rows, { data }] = await Promise.all([
+        const [rows, { data }, stats] = await Promise.all([
           fetchPatientEntries(patientId),
           supabase
             .from("profiles")
             .select("full_name, email")
             .eq("id", patientId)
             .maybeSingle(),
+          fetchPromptAdherence(patientId),
         ]);
         if (!alive) return;
         setEntries(rows);
         setProfile(data ?? null);
+        setAdherence(stats);
+
       } catch {
         if (alive) setError("You don't have access to this patient's record.");
       } finally {
@@ -133,6 +137,15 @@ function PatientPage() {
               </div>
             ))}
           </section>
+
+          <p className="mt-3 text-[12px] text-ink/55">
+            Reminders last 14 days: {adherence.answered} answered of {adherence.sent} sent
+            {adherence.sent
+              ? ` (${Math.round((adherence.answered / adherence.sent) * 100)}%)`
+              : ""}
+            .
+          </p>
+
 
           <section className="mt-6">
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-clay">
