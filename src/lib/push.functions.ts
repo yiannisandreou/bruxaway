@@ -17,7 +17,10 @@ export const savePushSubscription = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     // An endpoint belongs to exactly one browser install, so claim it for this
-    // account and drop any stale rows that still point at it elsewhere.
+    // account and drop any stale rows that still point at it elsewhere. Also
+    // retire this account's *other* endpoints: the daily prompt cap is counted
+    // per person while sends go per stored endpoint, so leftover rows from
+    // earlier installs would split the day's reminders across dead devices.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("device_push_subscriptions").delete().eq("endpoint", data.endpoint);
     await supabaseAdmin
@@ -34,12 +37,21 @@ export const savePushSubscription = createServerFn({ method: "POST" })
           endpoint: data.endpoint,
           p256dh: data.p256dh,
           auth_key: data.auth_key,
+          updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id,endpoint" },
       );
     if (error) throw error;
+
+    await supabaseAdmin
+      .from("push_subscriptions")
+      .delete()
+      .eq("user_id", context.userId)
+      .neq("endpoint", data.endpoint);
+
     return { ok: true };
   });
+
 
 
 /** Removes this device's push subscription (used when notifications are turned off). */

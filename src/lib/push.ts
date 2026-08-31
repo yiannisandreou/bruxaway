@@ -37,6 +37,40 @@ export async function syncDeviceSubscriptionSettings(): Promise<void> {
   await saveDevicePushSubscription({ data: devicePayload(sub) });
 }
 
+/** The live browser subscription for this device, if any. */
+export async function currentSubscription(): Promise<PushSubscription | null> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
+  const reg = await navigator.serviceWorker.getRegistration();
+  if (!reg) return null;
+  return (await reg.pushManager.getSubscription()) ?? null;
+}
+
+/**
+ * Re-registers this device's push subscription with the server on every app
+ * open. Server-side records can disappear (pruned after a transient rejection)
+ * or go stale (browser-rotated subscription); without this the device stays
+ * silent forever even though reminders still look enabled locally.
+ */
+export async function ensureSubscriptionRegistered(): Promise<void> {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+  if (!readSettings().notifications) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await usableSubscription(reg);
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    await storeSubscription(sub);
+  } catch {
+    // Non-fatal: reminders keep working from whichever record still exists.
+  }
+}
+
+
 
 /** Registers the service worker that handles incoming push events. */
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
