@@ -191,6 +191,36 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_schedule: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          fired: boolean
+          id: string
+          local_date: string
+          slot_local: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          fired?: boolean
+          id?: string
+          local_date: string
+          slot_local: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          fired?: boolean
+          id?: string
+          local_date?: string
+          slot_local?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       push_delivery_failures: {
         Row: {
           detail: string | null
@@ -342,6 +372,23 @@ export type Database = {
       is_care_linked: {
         Args: { _patient_id: string; _physician_id: string }
         Returns: boolean
+      }
+      prompt_targets: {
+        Args: never
+        Returns: {
+          auth_key: string
+          device_id: string
+          end_hour: number
+          endpoint: string
+          last_fired_at: string
+          local_date: string
+          local_now: string
+          p256dh: string
+          prompts_per_day: number
+          start_hour: number
+          timezone: string
+          user_id: string
+        }[]
       }
     }
     Enums: {
