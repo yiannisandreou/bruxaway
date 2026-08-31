@@ -140,7 +140,6 @@ async function promptHandler({ request }: { request: Request }) {
       if (since < MIN_GAP_MINUTES) continue;
     }
 
-    const slot = due[due.length - 1]!;
     // Older due slots are skipped (missed ticks) rather than fired back-to-back.
     await supabaseAdmin
       .from("prompt_schedule")
@@ -153,7 +152,6 @@ async function promptHandler({ request }: { request: Request }) {
       fired_at: new Date().toISOString(),
     });
     if (insErr) continue;
-    void slot;
 
     try {
       const { sendPush } = await import("@/lib/send-push.server");
