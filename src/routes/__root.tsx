@@ -145,10 +145,21 @@ function RootComponent() {
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
 
-  // Register the push service worker once, after hydration.
+  // Register the push service worker once, after hydration, then repair this
+  // device's server-side reminder record and refresh its timezone/window so a
+  // pruned or stale subscription can't silently stop reminders.
   useEffect(() => {
-    void registerServiceWorker();
+    void (async () => {
+      await registerServiceWorker();
+      const [{ ensureSubscriptionRegistered }, { syncSettingsToCloud }] = await Promise.all([
+        import("@/lib/push"),
+        import("@/lib/ema"),
+      ]);
+      await ensureSubscriptionRegistered();
+      await syncSettingsToCloud().catch(() => undefined);
+    })();
   }, []);
+
 
   return (
     <QueryClientProvider client={queryClient}>
