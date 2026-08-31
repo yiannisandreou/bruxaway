@@ -66,8 +66,12 @@ function buildSlots(startHour: number, endHour: number, count: number): number[]
  * Every skip, failure and send is recorded so a reminder that never went out is
  * visible in diagnostics instead of disappearing silently.
  */
+type Admin = Awaited<
+  typeof import("@/integrations/supabase/client.server")
+>["supabaseAdmin"];
+
 async function logDelivery(
-  admin: { from: (t: "push_delivery_failures") => any },
+  admin: Admin,
   endpoint: string,
   detail: string,
   status?: number,
