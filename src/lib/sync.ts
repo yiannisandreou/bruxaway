@@ -1,10 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import {
-  allLocalEntries,
-  mergeLocalEntries,
-  type BehaviorId,
-  type Entry,
-} from "@/lib/ema";
+import { allLocalEntries, mergeLocalEntries, type BehaviorId, type Entry } from "@/lib/ema";
 
 type Row = {
   id: string;
@@ -42,48 +37,48 @@ async function currentUserId() {
   return data.session?.user.id ?? null;
 }
 
-/**
- * Marks the most recent unanswered reminder as answered when a prompted
- * check-in comes in, so adherence reflects reminders responded to rather than
- * raw entry count.
- */
-async function markPromptAnswered(userId: string, at: number) {
-  const since = new Date(at - 60 * 60 * 1000).toISOString();
-  const { data } = await supabase
-    .from("prompt_events")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("answered", false)
-    .gte("fired_at", since)
-    .lte("fired_at", new Date(at).toISOString())
-    .order("fired_at", { ascending: false })
-    .limit(1);
-  const id = data?.[0]?.id;
-  if (id) await supabase.from("prompt_events").update({ answered: true }).eq("id", id);
-}
-
 /** Upserts entries to the cloud when signed in; silently no-ops otherwise. */
 export async function pushEntries(entries: Entry[]) {
   const userId = await currentUserId();
   if (!userId || !entries.length) return;
   await supabase.from("entries").upsert(entries.map((e) => entryToRow(e, userId)));
   const prompted = entries.filter((e) => e.prompted).sort((a, b) => b.ts - a.ts)[0];
-  if (prompted) await markPromptAnswered(userId, prompted.ts).catch(() => undefined);
+  if (prompted) {
+    const { markReminderAnswered } = await import("@/lib/prompt-answer.functions");
+    await markReminderAnswered({ data: { at: prompted.ts } }).catch(() => undefined);
+  }
 }
 
-/** Reminders fired vs answered for a patient over the last `days` days. */
+/**
+ * Reminders fired vs answered for a patient: over the last `days` days and, so
+ * a low log count can be read as under-delivery or non-response, for the
+ * patient's own local day.
+ */
 export async function fetchPromptAdherence(patientId: string, days = 14) {
+  const empty = { sent: 0, answered: 0, todaySent: 0, todayAnswered: 0 };
   const since = new Date(Date.now() - days * 86400000).toISOString();
-  const { data, error } = await supabase
-    .from("prompt_events")
-    .select("answered")
-    .eq("user_id", patientId)
-    .gte("fired_at", since);
-  if (error) return { sent: 0, answered: 0 };
+  const [{ data, error }, { data: profile }] = await Promise.all([
+    supabase
+      .from("prompt_events")
+      .select("answered, fired_at")
+      .eq("user_id", patientId)
+      .gte("fired_at", since),
+    supabase.from("profiles").select("timezone").eq("id", patientId).maybeSingle(),
+  ]);
+  if (error) return empty;
   const rows = data ?? [];
-  return { sent: rows.length, answered: rows.filter((r) => r.answered).length };
+  const tz = profile?.timezone || "UTC";
+  const localDay = (iso: string) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: tz, dateStyle: "short" }).format(new Date(iso));
+  const today = localDay(new Date().toISOString());
+  const todayRows = rows.filter((r) => localDay(r.fired_at) === today);
+  return {
+    sent: rows.length,
+    answered: rows.filter((r) => r.answered).length,
+    todaySent: todayRows.length,
+    todayAnswered: todayRows.filter((r) => r.answered).length,
+  };
 }
-
 
 export async function deleteEntry(id: string) {
   const userId = await currentUserId();

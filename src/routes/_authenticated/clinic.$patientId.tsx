@@ -36,7 +36,12 @@ export const Route = createFileRoute("/_authenticated/clinic/$patientId")({
 function PatientPage() {
   const { patientId } = Route.useParams();
   const [entries, setEntries] = useState<Entry[]>([]);
-  const [adherence, setAdherence] = useState({ sent: 0, answered: 0 });
+  const [adherence, setAdherence] = useState({
+    sent: 0,
+    answered: 0,
+    todaySent: 0,
+    todayAnswered: 0,
+  });
   const [profile, setProfile] = useState<{ full_name: string | null; email: string | null } | null>(
     null,
   );
@@ -49,18 +54,13 @@ function PatientPage() {
       try {
         const [rows, { data }, stats] = await Promise.all([
           fetchPatientEntries(patientId),
-          supabase
-            .from("profiles")
-            .select("full_name, email")
-            .eq("id", patientId)
-            .maybeSingle(),
+          supabase.from("profiles").select("full_name, email").eq("id", patientId).maybeSingle(),
           fetchPromptAdherence(patientId),
         ]);
         if (!alive) return;
         setEntries(rows);
         setProfile(data ?? null);
         setAdherence(stats);
-
       } catch {
         if (alive) setError("You don't have access to this patient's record.");
       } finally {
@@ -140,12 +140,13 @@ function PatientPage() {
 
           <p className="mt-3 text-[12px] text-ink/55">
             Reminders last 14 days: {adherence.answered} answered of {adherence.sent} sent
-            {adherence.sent
-              ? ` (${Math.round((adherence.answered / adherence.sent) * 100)}%)`
-              : ""}
+            {adherence.sent ? ` (${Math.round((adherence.answered / adherence.sent) * 100)}%)` : ""}
             .
           </p>
-
+          <p className="mt-1 text-[12px] text-ink/55">
+            Today (patient's local day): {adherence.todaySent} sent · {adherence.todayAnswered}{" "}
+            answered · {Math.max(0, adherence.todaySent - adherence.todayAnswered)} not answered.
+          </p>
 
           <section className="mt-6">
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-clay">
@@ -209,7 +210,9 @@ function PatientPage() {
               ))}
             </div>
             <p className="mt-2 text-[12px] text-ink/50">
-              {peak ? `Peak clustering ${peak.label} (${peak.count} episodes).` : "No episodes logged yet."}
+              {peak
+                ? `Peak clustering ${peak.label} (${peak.count} episodes).`
+                : "No episodes logged yet."}
             </p>
           </section>
 

@@ -30,7 +30,9 @@ export function ReportSheet({
     setContexts((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
 
   const submit = () => {
-    if (!behavior) return;
+    // A double tap (common on the notification hand-off) used to store the same
+    // check-in twice; `saved` latches the form after the first save.
+    if (!behavior || saved) return;
     addEntry({ behavior, contexts, stress, prompted });
     setSaved(true);
     window.setTimeout(() => {
