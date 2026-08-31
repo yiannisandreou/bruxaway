@@ -145,6 +145,11 @@ function PatientPage() {
               : ""}
             .
           </p>
+          <p className="mt-1 text-[12px] text-ink/55">
+            Today (patient's local day): {adherence.todaySent} sent ·{" "}
+            {adherence.todayAnswered} answered ·{" "}
+            {Math.max(0, adherence.todaySent - adherence.todayAnswered)} not answered.
+          </p>
 
 
           <section className="mt-6">
